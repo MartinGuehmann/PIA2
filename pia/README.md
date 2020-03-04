@@ -19,6 +19,9 @@
 
 ## Setting PIA up is pretty simple:
 
+	# - Clone this repository to /some/directory/
+	# - Clone https://github.com/peterjc/pico_galaxy.git to /some/directory/
+		- pico_galaxy is a dependency
 	# - Edit pia.pl :
 		- Line 1:  This should reflect the actual path to your perl installation
 		- Line 15: Path to your PIA folder

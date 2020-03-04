@@ -22,7 +22,8 @@ for file in *.fasta ; do
 	mkdir results_${file}
 	cd results_${file}
 
-	python "$DIR"/get_orfs_or_cdss.py $file fasta 1 ORF open top $aalength both ORF_nuc.fasta ORF_prot.fasta #> stdout 2>&1
+	# The file get_orfs_or_cdss.py is from the pico_galaxy repository. Install that next to your PIA2/pia/ directory. So this is two levels up of this script.
+	python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i $file -e open -m top --min_len $aalength --op ORF_prot.fasta
 
 	perl "$DIR"/pia.pl ORF_prot.fasta $search_type $gene mafft $evalue $blasthits
 
