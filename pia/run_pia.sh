@@ -21,7 +21,6 @@ for file in *.fasta ; do
 	cd pia
 	mkdir results_${file}
 	cd results_${file}
-	cp ../../${file} ./	
 
 	python "$DIR"/get_orfs_or_cdss.py $file fasta 1 ORF open top $aalength both ORF_nuc.fasta ORF_prot.fasta #> stdout 2>&1
 
