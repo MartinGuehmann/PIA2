@@ -701,17 +701,19 @@ if($lines < 1){
 		system "muscle -in toalign.fas -out aligned.fas -quiet";
 	}
 	elsif($align eq "mafft") {
-        	system "cat $newgenes $path.fas > toalign.fas";
-		print "Print Using: MAFFT v7.032b";
-        	system "mafft --quiet --auto toalign.fas > aligned.fas";
+			print "Using MAFFT ";
+			qx(mafft --version);
+			system "cat $newgenes $path.fas > toalign.fas";
+			system "mafft --quiet --auto toalign.fas > aligned.fas";
 	}
 	elsif($align eq "mafftprofile") {
- #       	system "cat $newgenes $path.fas.aligned > toalign.fas";
-		print "Print Using: MAFFT-profile v7.032b";
-        	system "mafft --add $newgenes --reorder $path.fas.aligned > aligned.fas";
+			print "Using MAFFT-profile ";
+			qx(mafft --version);
+#			system "cat $newgenes $path.fas.aligned > toalign.fas";
+			system "mafft --add $newgenes --reorder $path.fas.aligned > aligned.fas";
 	}
 	elsif($align eq "prank") {
-        	system "cat $newgenes $path.fas > toalign.fas";
+		system "cat $newgenes $path.fas > toalign.fas";
 		system "prank -d=toalign.fas -o=aligned -f=fasta -F";
 		system "mv aligned.2.fas aligned.fas";
 	}
