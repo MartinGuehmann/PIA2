@@ -1,7 +1,13 @@
-#First call perl script which reads trees and writes 
-#makeRtrees.pl must be in path!
-command -v /home/vader/apps/pia/phylographics/makeRtrees.pl >/dev/null 2>&1 || { echo > $6 "ERROR: You must change the absolute path in the tab2trees.sh file to match your local system."; exit 1; }
+#!/bin/bash
 
+# Get the directory where this script is
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 #$1 infile
 #$2 outfile
@@ -12,7 +18,8 @@ command -v /home/vader/apps/pia/phylographics/makeRtrees.pl >/dev/null 2>&1 || {
 #$7 yes|no to label OTUs with QUERY in title
 #$8 yes|no to conduct midpoint rooting
 
-/home/vader/apps/pia/phylographics/makeRtrees.pl $1 $2 $3 $4 $5 $7 $8 > $6 2>log.txt
+#First call perl script which reads trees and writes 
+"$DIR"/makeRtrees.pl $1 $2 $3 $4 $5 $7 $8 > $6 2>log.txt
 
 R --vanilla < $6 2>log.txt
 
