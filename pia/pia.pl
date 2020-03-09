@@ -62,13 +62,14 @@ while(<BLASTFILE>) {
 #exit;
 
 #Get arguments from xml in galaxy
-#my $command=shift(@ARGV);		#0 pia.pl command
-my $data_file=shift(@ARGV);		#0 data file to search
-my $scope = shift(@ARGV);		#1 scope [all|single|set]
-my $genefamily = shift(@ARGV);		#2 [NULL|name of set|name of family|
-my $alignment = shift(@ARGV);
-my $evalue = shift(@ARGV);
-my $maxkeep = shift(@ARGV);		# Maximum blast hits to retain
+#my $command   = shift(@ARGV);      # 0 pia.pl command
+my $data_file  = shift(@ARGV);      # 1 data file to search
+my $scope      = shift(@ARGV);      # 2 scope [all|single|set]
+my $genefamily = shift(@ARGV);      # 3 [NULL|name of set|name of family|
+my $alignment  = shift(@ARGV);      # 4 Alignment algorithm, e.g. mafft
+my $evalue     = shift(@ARGV);      # 5 E-value
+my $maxkeep    = shift(@ARGV);      # 6 Maximum blast hits to retain
+my $numThreads = shift(@ARGV);      # 7 The number of CPU cores
 
 my @genes2analyze;
 
@@ -101,7 +102,7 @@ while($thisgene = shift(@genes2analyze) ) {
 
 	#Next BLASTP data
 	system "blastp -version";
-	system "blastp -query '".$bait."' -db BLASTDB -outfmt 6 -out blastfile.tmp -num_threads 11 -evalue ".$evalue." -max_target_seqs ".$maxkeep;
+	system "blastp -query '".$bait."' -db BLASTDB -outfmt 6 -out blastfile.tmp -num_threads $numThreads -evalue ".$evalue." -max_target_seqs ".$maxkeep;
 	print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
 	close(BLASTFILE);
 
@@ -722,7 +723,7 @@ if($lines < 1){
 	system path($0)->parent->child("seqConverterG.pl") . " -daligned.fas -ope -Oaligned.phy";
 	print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 	system "raxmlHPC -version";
-	system "raxmlHPC -f v -s aligned.phy -m PROTGAMMALG -t $path.tre -n $thisgene -T 8";
+	system "raxmlHPC -f v -s aligned.phy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
 }
 
 #RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
