@@ -10,19 +10,29 @@ use FindBin;
 use lib $FindBin::Bin;
 use FastaDb;
 use FastqDb;
+use Path::Tiny;
 
-#The directory where PIA is located must match this:
-my $PIADIR = "/home/vader/apps/pia/";
+
+#use File::Spec::Functions;
+#Get the directory where PIA is. This is the directory of this script:
+use File::Basename ();
+my $PIADIR       = File::Basename::dirname($0);
+my $SUBDIR       = "LIT_1.1";
+my $dataFileName = "LIT_1.1.txt";
 
 #The directory where precalculated genetrees and LIT_1.1.txt file are located must match this:
-my $DATADIR = "/home/vader/apps/pia/LIT_1.1/";
+my $DATADIR      = path($0)->parent->child("$SUBDIR");
+my $dataFile     = path("$DATADIR")->child($dataFileName);
+
+print "PiaDir: ", $PIADIR, "\n";
+print "DataDir: ", $DATADIR, "\n";
 
 #test tab delim output
 system "touch allhits.tab";
 
 #First, read in data table containing gene name, path, etc
 	#Place these data into a hash
-open(BLASTFILE, "<".$DATADIR."LIT_1.1.txt")or die "LIT_1.1 file must be available check full path in pia.pl";
+open(BLASTFILE, "<$dataFile")or die "File $dataFileName file must be available check full path in pia.pl";
 
 my @genedata;
 my %HoH;
@@ -111,7 +121,7 @@ while($thisgene = shift(@genes2analyze) ) {
 	#Conduct read placement using raxml
 
 		#Add full path
-	my $path = $DATADIR.$HoH{$thisgene}{set}."/".$HoH{$thisgene}{reftreename};
+	my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
 	chomp($path);
 	genetree_read_placement("addfile.fas",$alignment,$path,$thisgene);
 	system "cat addfile.fas >> allhits.fas";
@@ -707,9 +717,7 @@ if($lines < 1){
 	}
 
 	#convert to phylip format, uses seqConverter.pl
-	my $command = $PIADIR."seqConverterG.pl -daligned.fas -ope -Oaligned.phy";
-	system $command;
-#	system "/home/PIA/galaxy-dist/tools/pia/seqConverterG.pl -daligned.fas -ope -Oaligned.phy";
+	system path($0)->parent->child("seqConverterG.pl") . " -daligned.fas -ope -Oaligned.phy";
 	print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 	system "raxmlHPC -version";
 	system "raxmlHPC -f v -s aligned.phy -m PROTGAMMALG -t $path.tre -n $thisgene -T 8";
@@ -718,7 +726,7 @@ if($lines < 1){
 #RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
 my @outgroups = split(',', $outgroup);
 print "Using phyutility to root with OUTGROUPS determined from midpoint rooting\n: @outgroups\n";
-system "/home/vader/apps/pia/phyutility/phyutility -rr -in RAxML_labelledTree.".$thisgene." -out RootedTree.".$thisgene." -names @outgroups";
+system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$thisgene." -out RootedTree.".$thisgene." -names @outgroups";
 #Now make tab delimited file to use in tab2trees
 #open treefile to read tree line
 #system "cat RAxML_info.$thisgene";

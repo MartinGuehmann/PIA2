@@ -1,3 +1,14 @@
+#!/bin/bash
+
+# Get the directory where this script is
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
 ### This collection of scripts is written in bash, perl, and python.
 ###
 ### Make sure dependencies are installed and configured before running.
@@ -18,12 +29,12 @@
 ###  Identify tips longer than ___ median absolute deviations of the tree's branch lengths. Modify number to change MAD multiplier.
 ###  long_branch_finder2.py can be reverted to calculate standard deviations instead of MADs. More info as comments in the script.
 
-python ~/apps/osiris_phylogenetics/phylogenies/long_branch_finder2.py treeout.tab 4 > hits_to_prune.list
+python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py treeout.tab 4 > hits_to_prune.list
 
 
 ### Clean the output of the long branch finder to avoid conflicts downstream.
 
-python ~/apps/pia/cleanhits.py hits_to_prune.list > hits_to_prune.clean.list
+python "$DIR"/cleanhits.py hits_to_prune.list > hits_to_prune.clean.list
 
 
 ### Fix PIA's allhits.tab into proper phytab, then removes the | from old assemblies.
@@ -34,7 +45,7 @@ sed -ie "s/|/_/g" allhits.fixed.tab
 
 ### Remove entries from PIA results phytab file that match to a list.
 
-python ~/apps/osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py allhits.fixed.tab hits_to_prune.clean.list discard > allhits.pruned.tab
+python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py allhits.fixed.tab hits_to_prune.clean.list discard > allhits.pruned.tab
 
 
 ### Convert back to FASTA

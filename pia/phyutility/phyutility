@@ -1,1 +1,0 @@
-java -Xmx12g -jar /home/vader/apps/pia/phyutility/phyutility.jar $*
