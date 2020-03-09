@@ -22,22 +22,20 @@
 	# - Clone this repository to /some/directory/
 	# - Clone https://github.com/peterjc/pico_galaxy.git to /some/directory/
 		- pico_galaxy is a dependency
-	# - Edit pia.pl :
-		- Line 1:  This should reflect the actual path to your perl installation
-		- Line 15: Path to your PIA folder
-		- Line 18: Path to your LIT folder, usually within PIA’s unless you want it elsewhere
-		- Line 94: You might want to change -num_threads to the number of CPU threads you want to allocate to BLAST
-		- Lines 714 & 715: This should reflect the raxml version you’re using. The -T again is changeable to allocate CPU threads, and -m corresponds to the model of evolution for RAxML to use if customization is required. 
-		- Line 721: Modify path to PIA & phyutility
+	# - You may edit numThreads in run_pia.pl if you want to use less CTP cores than you have available on your system
+	# - You may edit the -m option in the system call raxmlHPC in pia.pl if you need to customize the model of evolution for RAxML. 
 
-	# - Edit pia/phyutility/phyutility
-		- Change Path to reflect your installation
+	# Further things to install (list probably incomplete)
+	# - Install ncbi blast+ (sudo apt-get install ncbi-blast+)
+	# - Install statsmodels (https://www.statsmodels.org/stable/install.html)
+	# - Install R
+		- Install packets ape
+		- Install phytools requires (Ubuntu, Debian)
+			- sudo apt install libmagick++-dev
+			- sudo apt install libcurl4-openssl-dev
+	# - Install usearch (https://www.drive5.com/usearch/download.html)
 
-	# - Edit pia/phylographics/tab2trees.sh
-		- Change Paths in lines 3 & 15
-
-
-## The script run_pia.sh will run PIA and post-PIA on all fasta files in a given directory. 
+## The script run_pia.sh will run PIA and post-PIA on all fasta files in the working directory. 
 ## Both run_pia.sh and post_pia.sh should be edited before running to adjust parameters.
 
 
