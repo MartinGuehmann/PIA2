@@ -705,13 +705,13 @@ if($lines < 1){
 			print "Using MAFFT ";
 			qx(mafft --version);
 			system "cat $newgenes $path.fas > toalign.fas";
-			system "mafft --quiet --auto toalign.fas > aligned.fas";
+			system "mafft --thread $numThreads --quiet --auto toalign.fas > aligned.fas";
 	}
 	elsif($align eq "mafftprofile") {
 			print "Using MAFFT-profile ";
 			qx(mafft --version);
 #			system "cat $newgenes $path.fas.aligned > toalign.fas";
-			system "mafft --add $newgenes --reorder $path.fas.aligned > aligned.fas";
+			system "mafft --thread $numThreads --add $newgenes --reorder $path.fas.aligned > aligned.fas";
 	}
 	elsif($align eq "prank") {
 		system "cat $newgenes $path.fas > toalign.fas";
