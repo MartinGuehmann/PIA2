@@ -19,10 +19,21 @@ numThreads=$(nproc)     # Get the number of the currently available processing u
 
 for file in *.fasta ; do
 
-	mkdir pia
+	if [ ! -d "./pia" ]
+	then
+		mkdir pia
+	fi
+
 	cd pia
-	mkdir results_${file}
-	cd results_${file}
+
+	RESULTS_FILE="results_${file}"
+
+	if [ ! -d "$RESULTS_FILE" ]
+	then
+		mkdir "$RESULTS_FILE"
+	fi
+
+	cd "$RESULTS_FILE"
 
 	# The file get_orfs_or_cdss.py is from the pico_galaxy repository. Install that next to your PIA2/pia/ directory. So this is two levels up of this script.
 	python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op ORF_prot.fasta
