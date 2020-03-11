@@ -9,6 +9,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 CURDIR="$(pwd)"
+SUBDIR="pia"
 
 # Idiomatic parameter and option handling in sh
 # Adapted from https://superuser.com/questions/186272/check-if-any-of-the-parameters-to-a-bash-script-match-a-string
@@ -39,12 +40,12 @@ numThreads=$(nproc)     # Get the number of the currently available processing u
 
 for file in *.fasta ; do
 
-	if [ ! -d "./pia" ]
+	if [ ! -d "$SUBDIR" ]
 	then
-		mkdir pia
+		mkdir "$SUBDIR"
 	fi
 
-	cd pia
+	cd "$SUBDIR"
 
 	RESULTS_FILE="results_${file}"
 
