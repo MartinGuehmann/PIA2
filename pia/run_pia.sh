@@ -56,13 +56,16 @@ for file in *.fasta ; do
 
 	cd "$RESULTS_FILE"
 
- 	if [ ! -f "ORF_prot.fasta" -o "$rebuildDatabases" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
+	filebase=$(basename ${file} ".fasta")
+	ORF_FILE="${filebase}_ORF_${aalength}aa.fasta"
+
+ 	if [ ! -f "$ORF_FILE" -o "$rebuildDatabases" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
 	then
 		# The file get_orfs_or_cdss.py is from the pico_galaxy repository. Install that next to your PIA2/pia/ directory. So this is two levels up of this script.
-		python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op ORF_prot.fasta
+		python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op "$ORF_FILE"
 	fi
 
-	perl "$DIR"/pia.pl ORF_prot.fasta $search_type $gene mafft $evalue $blasthits $numThreads
+	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads
 
 	perl "$DIR"/phylographics/makeRtrees.pl treeout.tab trees.pdf phylogram no None Rfile yes no >tree.R
 

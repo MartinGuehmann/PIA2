@@ -12,8 +12,6 @@ use FastaDb;
 use FastqDb;
 use Path::Tiny;
 
-
-#use File::Spec::Functions;
 #Get the directory where PIA is. This is the directory of this script:
 use File::Basename ();
 my $PIADIR       = File::Basename::dirname($0);
@@ -23,9 +21,6 @@ my $dataFileName = "LIT_1.1.txt";
 #The directory where precalculated genetrees and LIT_1.1.txt file are located must match this:
 my $DATADIR      = path($0)->parent->child("$SUBDIR");
 my $dataFile     = path("$DATADIR")->child($dataFileName);
-
-print "PiaDir: ", $PIADIR, "\n";
-print "DataDir: ", $DATADIR, "\n";
 
 #test tab delim output
 system "touch allhits.tab";
@@ -87,11 +82,15 @@ if($scope eq "single"){
 		}
 	}
 }
-my $thisgene;
-system "echo '' > allhits.fas"; #File to retain all hits found from all gene families in run
-print ".........Creating Blast Database\n";
-system "makeblastdb -in ".$data_file." -out BLASTDB -dbtype prot";
 
+my($filename, $dirs, $suffix) = File::Basename::fileparse($data_file, qr/\.[^.]*/);
+my $BLASTDB = $filename . ".blastDB";
+
+system "echo '' > allhits.fas"; #File to retain all hits found from all gene families in run
+print ".........Creating Blast Database: $BLASTDB\n";
+system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
+
+my $thisgene;
 while($thisgene = shift(@genes2analyze) ) {
 	open(BLASTFILE, ">blastfile.tmp");
 	print "\n\n\n**************Analyzing $thisgene ..............\n";
@@ -102,7 +101,7 @@ while($thisgene = shift(@genes2analyze) ) {
 
 	#Next BLASTP data
 	system "blastp -version";
-	system "blastp -query '".$bait."' -db BLASTDB -outfmt 6 -out blastfile.tmp -num_threads $numThreads -evalue ".$evalue." -max_target_seqs ".$maxkeep;
+	system "blastp -query '".$bait."' -db $BLASTDB -outfmt 6 -out blastfile.tmp -num_threads $numThreads -evalue ".$evalue." -max_target_seqs ".$maxkeep;
 	print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
 	close(BLASTFILE);
 
