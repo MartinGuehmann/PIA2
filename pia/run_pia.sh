@@ -72,7 +72,7 @@ for file in *.fasta ; do
 
 	R --vanilla < tree.R 2>log.txt
 
-	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene}
+	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
 	cd ../../
 
 done
