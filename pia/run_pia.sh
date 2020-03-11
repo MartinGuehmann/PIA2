@@ -57,7 +57,8 @@ for file in *.fasta ; do
 	cd "$RESULTS_FILE"
 
 	filebase=$(basename ${file} ".fasta")
-	ORF_FILE="${filebase}_ORF_${aalength}aa.fasta"
+	ORF_FILE_BASE="${filebase}_ORF_${aalength}aa"
+	ORF_FILE="${ORF_FILE_BASE}.fasta"
 
  	if [ ! -f "$ORF_FILE" -o "$rebuildDatabases" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
 	then
@@ -71,7 +72,7 @@ for file in *.fasta ; do
 
 	R --vanilla < tree.R 2>log.txt
 
-	"$DIR"/post_pia.sh
+	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene}
 	cd ../../
 
 done

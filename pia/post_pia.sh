@@ -56,9 +56,4 @@ awk '{print ">"$1"_"$2"\n"$3}' allhits.pruned.tab > allhits.pruned.fasta
 
 ### Remove duplicated sequences resulting from translation of similar isoforms.
 
-usearch -cluster_fast allhits.pruned.fasta -sort length -id 1.00 -threads 8 -centroids PIA.results.fasta
-
-
-
-
-
+usearch -cluster_fast allhits.pruned.fasta -sort length -id 1.00 -threads 8 -centroids "${1}.${2}.PIA.results.fasta"
