@@ -27,7 +27,7 @@ system "touch allhits.tab";
 
 # First, read in the data table with gene name, path, etc
 # Place these data into a hash
-open(BLASTFILE, "<$dataFile")or die "File $dataFileName file must be available check full path in pia.pl";
+open(BLASTFILE, "<$dataFile") or die "File $dataFileName file must be available check full path in pia.pl";
 
 my @genedata;
 my %HoH;
@@ -46,6 +46,8 @@ while(<BLASTFILE>) {
 		die "File named genelist.txt must be availalbe in tab delimited format with gene data\n";
 	}
 }
+
+close(BLASTFILE);
 
 #To print hash for debug purposes
 #for my $loop (keys %HoH) {
@@ -131,9 +133,9 @@ while($thisgene = shift(@genes2analyze) ) {
 
 sub addstring2fashead
 {
-	my $infile = $_[0];
-	my $addstring = $_[1];
-	my $in_obj = Bio::SeqIO->new(-file => $infile, '-format' => 'fasta');
+	my $infile       = $_[0];
+	my $addstring    = $_[1];
+	my $in_obj       = Bio::SeqIO->new(-file => $infile, '-format' => 'fasta');
 	my $currentinput = $addstring;
 
 	#grab sequence object
@@ -204,13 +206,14 @@ sub get_gb
 		my $query = Bio::DB::Query::GenBank->new
 		        (-query   =>$qry_string,
 		         -db      =>$datatype);
-	
+
 		my $count;
 		my $species;
 		my $seqio;
 		if($outtype eq "phytab"){ #print phytab format, do not use bioperl as below.
-			open(OUTFILE, ">>$outfile");
 			if( defined ($seqio = $gb->get_Stream_by_query($query)) ){
+
+				open(OUTFILE, ">>$outfile");
 			#	my $seqio = $gb->get_Stream_by_query($query);
 				while( defined ($GBseq = $seqio->next_seq )) {
 					my $sequence = $GBseq;   # read a sequence object
@@ -233,6 +236,8 @@ sub get_gb
 						print OUTFILE $species."\tNone\t".$sequence->accession."\t".$sequence->seq."\n";
 					}
 				}
+
+				close(OUTFILE);
 			}else{
 				print "Did not find $accessions\n";
 			}
@@ -255,18 +260,21 @@ sub get_gb
 			}
 		}
 	}
-	close(OUTFILE);
+
+	# Unmodified input argument $2
+	# So actually no point to return this
 	return($outfile);
 }
 
 sub checkempty
 {
-	my $infile = $_[0];
+	my $infile  = $_[0];
 	my $outfile = $_[1];
 
 	if (-z $infile){
-		open OUTFILE, ">$outfile" or die "File cannot be opened\n";
+		open(OUTFILE, ">$outfile") or die "File cannot be opened\n";
 		print OUTFILE "EMPTY\tEMPTY\tEMPTY\t**No Hits found\n";
+		close(OUTFILE);
 	}else{
 		system "cp $infile $outfile";
 	}
@@ -416,10 +424,10 @@ sub match
 sub search_cosorted
 {
 	my ($dbfile, $tablefile, $id_col, $ignorecase, $selected, $unselected, $paired, $gzip, $filters) = @_;
-	my $sfh = new IO::File;
-	my $ufh = new IO::File;
-	my $table = new IO::File;
-	my $n_selected = 0;
+	my $sfh          = new IO::File;
+	my $ufh          = new IO::File;
+	my $table        = new IO::File;
+	my $n_selected   = 0;
 	my $n_unselected = 0;
 
 	# OPEN FILES
@@ -507,6 +515,7 @@ sub search_cosorted
 			++$n_unselected;
 		}
 	}
+
 	close $table;
 	close $sfh;
 	close $ufh;
@@ -544,12 +553,12 @@ sub search_cosorted
 sub search
 {
 	my ($dbfile, $tablefile, $id_col, $ignorecase, $selected, $unselected, $paired, $gzip, $filters) = @_;
-	my $sfh = new IO::File;    # selected seqs
-	my $ufh = new IO::File;    # unselected seqs
-	my $table=new IO::File;
-	my $n_selected=0;
-	my $n_unselected=0;
-	my %ids = ();
+	my $sfh          = new IO::File;    # selected seqs
+	my $ufh          = new IO::File;    # unselected seqs
+	my $table        = new IO::File;
+	my $n_selected   = 0;
+	my $n_unselected = 0;
+	my %ids          = ();
 	open(DB,    "<$dbfile")    or die("Unable to open file, $dbfile: $!\n");
 	if ($tablefile) {
 		open($table, "<$tablefile") or die("Unable to open file, $tablefile: $!\n");
@@ -649,9 +658,9 @@ sub search
 	foreach my $id (keys %ids) {
 		if ($ids{$id}) {
 			delete($ids{$id}); # SOMETIMES INFILES CONTAIN ONLY ONE READ OF PAIR
-	}elsif($id eq 'EMPTY') {		#ADDEDBY THO TO ALLOW EMPTY blast results 
-						#in workflow using checkempty.pl
-		return();
+		}elsif($id eq 'EMPTY') {  # ADDEDBY THO TO ALLOW EMPTY blast results 
+			#in workflow using checkempty.pl
+			return();
 		} else {
 			warn("Seq not found: $id\n");
 		}
@@ -671,7 +680,7 @@ sub genetree_read_placement
 	#my $path     = shift(@ARGV);       #2 path to tree and gene data
 	#my $name     = shift(@ARGV);       #3 name of gene family
 
-	#If $newgenes has no hits, do not do read placement, just write tree with no hits
+	# If $newgenes has no hits, do not place the reads, just write a tree with no hits
 	my $buffer;
 	my $lines = 0;
 	open(FILE, "$newgenes") or die "Can't open `$newgenes': $!";
