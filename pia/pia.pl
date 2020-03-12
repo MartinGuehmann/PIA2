@@ -12,21 +12,21 @@ use FastaDb;
 use FastqDb;
 use Path::Tiny;
 
-#Get the directory where PIA is. This is the directory of this script:
+# Get the directory where PIA is. This is the directory of this script:
 use File::Basename ();
 my $PIADIR       = File::Basename::dirname($0);
 my $SUBDIR       = "LIT_1.1";
 my $dataFileName = "LIT_1.1.txt";
 
-#The directory where precalculated genetrees and LIT_1.1.txt file are located must match this:
+# The directory where precalculated genetrees and LIT_1.1.txt file are located must match this:
 my $DATADIR      = path($0)->parent->child("$SUBDIR");
 my $dataFile     = path("$DATADIR")->child($dataFileName);
 
 #test tab delim output
 system "touch allhits.tab";
 
-#First, read in data table containing gene name, path, etc
-	#Place these data into a hash
+# First, read in the data table with gene name, path, etc
+# Place these data into a hash
 open(BLASTFILE, "<$dataFile")or die "File $dataFileName file must be available check full path in pia.pl";
 
 my @genedata;
@@ -46,6 +46,7 @@ while(<BLASTFILE>) {
 		die "File named genelist.txt must be availalbe in tab delimited format with gene data\n";
 	}
 }
+
 #To print hash for debug purposes
 #for my $loop (keys %HoH) {
 #	print "$loop: ";
@@ -68,12 +69,11 @@ my $numThreads = shift(@ARGV);      # 7 The number of CPU cores
 
 my @genes2analyze;
 
-#if $scope = functional then loop through all genes and analyze those that match set
-#*
+#if $scope = functional then loop through all genes and analyze those that match to the set
 if($scope eq "single"){
 	push(@genes2analyze, $genefamily);
 }else{ #scope = functional
-	#add all genes from set into array
+	# Add all genes from set into an array
 	print "Analyzing functional gene class\n";
 	for my $hashgene (keys %HoH) {
 		if($HoH{$hashgene}{set} eq $genefamily) {
@@ -94,23 +94,23 @@ my $thisgene;
 while($thisgene = shift(@genes2analyze) ) {
 	open(BLASTFILE, ">blastfile.tmp");
 	print "\n\n\n**************Analyzing $thisgene ..............\n";
-	#use get_gb to obtain sequence from genbank using accession(s) that are looked up based on gene name
-		#bait written to tempfile.tmp using get_gb subscript
+	# Use get_gb to obtain sequence from genbank using accession(s) that are looked up based on gene name
+	# bait written to tempfile.tmp using get_gb subscript
 	my $accession = $HoH{$thisgene}{bait};
 	my $bait = get_gb('protein','fasta','tempfile.tmp',$accession,'','');
 
-	#Next BLASTP data
+	# Next BLASTP data
 	system "blastp -version";
 	system "blastp -query '".$bait."' -db $BLASTDB -outfmt 6 -out blastfile.tmp -num_threads $numThreads -evalue ".$evalue." -max_target_seqs ".$maxkeep;
 	print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
 	close(BLASTFILE);
 
-	#add some text to file when no blast hits found
+	# Add some text to the file when no blast hits have been found
 	checkempty("blastfile.tmp","2blastfile.tmp");
 	system "rm blastfile.tmp";
 	system "cat 2blastfile.tmp";
 
-	#Now Grab sequences from input database. hits is temporary file containing hits that get_seqs will write to
+	# Grab sequences from the input database. hits is temporary file containing hits that get_seqs will write to
 	get_seqs($data_file,"2blastfile.tmp","2","","","hits","","","","");
 	system "rm 2blastfile.tmp";
 
@@ -118,9 +118,9 @@ while($thisgene = shift(@genes2analyze) ) {
 	addstring2fashead("hits",$HoH{$thisgene}{fastatag});
 	system "rm hits";
 
-	#Conduct read placement using raxml
+	# Place the reads with raxml
 
-		#Add full path
+	# Add the full path
 	my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
 	chomp($path);
 	genetree_read_placement("addfile.fas",$alignment,$path,$thisgene);
@@ -129,19 +129,17 @@ while($thisgene = shift(@genes2analyze) ) {
 	system "rm tempfile.tmp";
 }
 
-
-
 sub addstring2fashead
 {
-my $infile = $_[0];
-my $addstring = $_[1];
+	my $infile = $_[0];
+	my $addstring = $_[1];
 	my $in_obj = Bio::SeqIO->new(-file => $infile, '-format' => 'fasta');
 	my $currentinput = $addstring;
 
 	#grab sequence object
 	open(ADDFILE, ">addfile.fas");
 	open(TABFILE, ">>allhits.tab");
-#*
+
 	while (my $seq = $in_obj->next_seq() ) {
 		my $seq_obj = $in_obj;
 
@@ -149,7 +147,7 @@ my $addstring = $_[1];
 		print ADDFILE ">".$seq_id;
 		my $seq_seq = $seq->seq;
 		print ADDFILE "\n".$seq_seq."\n";
-		# extract just the name from the 'X_hit' string
+		# Extract just the name from the 'X_hit' string
 		$seq_id =~ s/\|ORF\d+// ;
 		my $left = index($seq_id, "_hit_")+5;
 		my $fragment = substr $seq_id, $left;
@@ -248,7 +246,7 @@ unless($genenames eq ''){
 			#        	my $seqio = $gb->get_Stream_by_query($query);
 	        		while( defined ($GBseq = $seqio->next_seq )) {
 	        		        my $sequence = $GBseq;   # read a sequence object
-					if($manbin ==1){ #replace GenBank Names with Custom Names
+					if($manbin ==1){ # Replace GenBank Names with Custom Names
 						$sequence->id($newnames[$countnames]);
 						$sequence->desc('');
 						$countnames++;
@@ -542,7 +540,7 @@ sub search_cosorted
 }
 
 #
-# LOAD IDS IN RAM THEN PARSE DB.
+# LOAD IDS INTO RAM THEN PARSE DB.
 #
 sub search
 {

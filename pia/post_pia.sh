@@ -16,7 +16,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 ###
 ### With the exception of cleanhits.py and the customized long_branch_finder2.py, 
 ### all other scripts can be found as part of the osiris_phylogenetics galaxy module
-### avalaible here: https://bitbucket.org/osiris_phylogenetics/osiris_phylogenetics
+### available here: https://bitbucket.org/osiris_phylogenetics/osiris_phylogenetics
 ### 
 ### Special thanks to Todd Oakley's lab at UCSB for the original galaxy scripts on 
 ### which we have based this pipeline.
