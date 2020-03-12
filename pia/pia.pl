@@ -88,24 +88,42 @@ if($scope eq "single"){
 my($filename, $dirs, $suffix) = File::Basename::fileparse($data_file, qr/\.[^.]*/);
 my $BLASTDB = $filename . ".blastDB";
 
-system "echo '' > allhits.fas"; #File to retain all hits found from all gene families in run
+system "echo '' > allhits.fas"; # File to retain all hits found from all gene families in the run
 print ".........Creating Blast Database: $BLASTDB\n";
 system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
 
 my $thisgene;
 while($thisgene = shift(@genes2analyze) ) {
-	open(BLASTFILE, ">blastfile.tmp");
 	print "\n\n\n**************Analyzing $thisgene ..............\n";
 	# Use get_gb to obtain sequence from genbank using accession(s) that are looked up based on gene name
 	# bait written to tempfile.tmp using get_gb subscript
+
+	my $fh;
+	my $query = "";
+	open($fh, ">", \$query);
 	my $accession = $HoH{$thisgene}{bait};
-	my $bait = get_gb('protein','fasta','tempfile.tmp',$accession,'','');
+
+	# No return value, $fh is passed by reference
+	get_gb('protein', 'fasta', $fh, $accession, '', '');
+	close($fh);
+
+	open($fh, "<", \$query);
 
 	# Next BLASTP data
 	system "blastp -version";
-	system "blastp -query '".$bait."' -db $BLASTDB -outfmt 6 -out blastfile.tmp -num_threads $numThreads -evalue ".$evalue." -max_target_seqs ".$maxkeep;
 	print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
-	close(BLASTFILE);
+
+	my $command = "blastp"
+	            . " -query <(echo -e \"$query\") "
+	            . " -db "              . $BLASTDB
+	            . " -outfmt "          . 6
+	            . " -out blastfile.tmp "
+	            . " -num_threads "     . $numThreads
+	            . " -evalue "          . $evalue
+	            . " -max_target_seqs " . $maxkeep;
+
+	my $finds   = qx(bash -c '$command');
+	close($fh);
 
 	# Add some text to the file when no blast hits have been found
 	checkempty("blastfile.tmp","2blastfile.tmp");
@@ -128,7 +146,6 @@ while($thisgene = shift(@genes2analyze) ) {
 	genetree_read_placement("addfile.fas",$alignment,$path,$thisgene);
 	system "cat addfile.fas >> allhits.fas";
 	system "rm addfile.fas";
-	system "rm tempfile.tmp";
 }
 
 sub addstring2fashead
@@ -165,12 +182,12 @@ sub addstring2fashead
 
 sub get_gb
 {
-	my $datatype  = $_[0];
-	my $outtype   = $_[1];
-	my $outfile   = $_[2];
-	my $manual    = $_[3];
-	my $mannames  = $_[4];
-	my $genenames = $_[5];
+	my $datatype   = $_[0];
+	my $outtype    = $_[1];
+	my $fileHandle = $_[2];
+	my $manual     = $_[3];
+	my $mannames   = $_[4];
+	my $genenames  = $_[5];
 
 	my $accessions;
 	my @accnums;
@@ -191,6 +208,16 @@ sub get_gb
 
 	@accnums = split(/,/,$manual);
 	my $countnames = 0;
+
+	# A bit ugly, but when $fh goes out of scope it also closes $fileHandle,
+	# which is supposed to be closed from the caller, since it opened it.
+	my $fh;
+
+	if($outtype ne "phytab")
+	{
+		$fh = Bio::SeqIO->new(-fh => $fileHandle, -format => $outtype);
+	}
+
 	foreach (@accnums){
 		#Should check input for one word per line and throw error if not, which is not done
 
@@ -209,12 +236,10 @@ sub get_gb
 
 		my $count;
 		my $species;
-		my $seqio;
-		if($outtype eq "phytab"){ #print phytab format, do not use bioperl as below.
-			if( defined ($seqio = $gb->get_Stream_by_query($query)) ){
 
-				open(OUTFILE, ">>$outfile");
-			#	my $seqio = $gb->get_Stream_by_query($query);
+		if($outtype eq "phytab"){ #print phytab format, do not use bioperl as below.
+			if( defined (my $seqio = $gb->get_Stream_by_query($query)) ){
+
 				while( defined ($GBseq = $seqio->next_seq )) {
 					my $sequence = $GBseq;   # read a sequence object
 					if($manbin ==1){ #replace GenBank Names with Custom Names
@@ -228,24 +253,22 @@ sub get_gb
 					}
 					if(@genenames > 0){
 						if(@genenames == 1){
-							print OUTFILE $species."\t".$genenames[0]."\t".$sequence->accession."\t".$sequence->seq."\n";
+							$fileHandle->print($species."\t".$genenames[0]."\t".$sequence->accession."\t".$sequence->seq."\n");
 						}else{
-							print OUTFILE $species."\t".$genenames[$countnames-1]."\t".$sequence->accession."\t".$sequence->seq."\n";
+							$fileHandle->print($species."\t".$genenames[$countnames-1]."\t".$sequence->accession."\t".$sequence->seq."\n");
 						}
 					}else{
-						print OUTFILE $species."\tNone\t".$sequence->accession."\t".$sequence->seq."\n";
+						$fileHandle->print($species."\tNone\t".$sequence->accession."\t".$sequence->seq."\n");
 					}
 				}
 
-				close(OUTFILE);
 			}else{
 				print "Did not find $accessions\n";
 			}
 		}else{
-			my $fh = Bio::SeqIO->newFh(-format=>$outtype, -file => ">>$outfile");
 
-			if( defined ($seqio = $gb->get_Stream_by_query($query)) ){
-			#	my $seqio = $gb->get_Stream_by_query($query);
+			if( defined (my $seqio = $gb->get_Stream_by_query($query)) ){
+
 				while( defined ($GBseq = $seqio->next_seq )) {
 					my $sequence = $GBseq;   # read a sequence object
 					if($manbin ==1){ # Replace GenBank Names with Custom Names
@@ -253,17 +276,13 @@ sub get_gb
 						$sequence->desc('');
 						$countnames++;
 					}
-					print $fh $sequence; # write a sequence object
+					$fh->write_seq($sequence); # write a sequence object
 				}
 			}else{
 				print "Did not find $accessions\n";
 			}
 		}
 	}
-
-	# Unmodified input argument $2
-	# So actually no point to return this
-	return($outfile);
 }
 
 sub checkempty
