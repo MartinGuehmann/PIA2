@@ -11,6 +11,7 @@ use lib $FindBin::Bin;
 use FastaDb;
 use FastqDb;
 use Path::Tiny;
+use Scalar::Util qw(openhandle);
 
 # Get the directory where PIA is. This is the directory of this script:
 use File::Basename ();
@@ -117,7 +118,6 @@ while($thisgene = shift(@genes2analyze) ) {
 	            . " -query <(echo -e \"$query\") "
 	            . " -db "              . $BLASTDB
 	            . " -outfmt "          . 6
-	            . " -out blastfile.tmp "
 	            . " -num_threads "     . $numThreads
 	            . " -evalue "          . $evalue
 	            . " -max_target_seqs " . $maxkeep;
@@ -126,17 +126,29 @@ while($thisgene = shift(@genes2analyze) ) {
 	close($fh);
 
 	# Add some text to the file when no blast hits have been found
-	checkempty("blastfile.tmp","2blastfile.tmp");
-	system "rm blastfile.tmp";
-	system "cat 2blastfile.tmp";
+	if($finds eq "")
+	{
+		$finds = "EMPTY\tEMPTY\tEMPTY\t**No Hits found\n";
+	}
+
+	print $finds;
+
+	open($fh, "<", \$finds);
+	my $decoratedHits = "";
+	my $hits;
+	open($hits, ">", \$decoratedHits);
 
 	# Grab sequences from the input database. hits is temporary file containing hits that get_seqs will write to
-	get_seqs($data_file,"2blastfile.tmp","2","","","hits","","","","");
-	system "rm 2blastfile.tmp";
+	get_seqs($data_file, $fh, "2", "", "", $hits, "", "", "", "");
+	close($fh);
+	# close($hits); # Already closed in sub of get_seqs.
 
+	print $decoratedHits;
+
+	open($hits, "<", \$decoratedHits);
 	#Next add string to identify gene family to beginning of hits
-	addstring2fashead("hits",$HoH{$thisgene}{fastatag});
-	system "rm hits";
+	addstring2fashead($hits, $HoH{$thisgene}{fastatag});
+	close($hits);
 
 	# Place the reads with raxml
 
@@ -150,9 +162,9 @@ while($thisgene = shift(@genes2analyze) ) {
 
 sub addstring2fashead
 {
-	my $infile       = $_[0];
+	my $infileHandle = $_[0];
 	my $addstring    = $_[1];
-	my $in_obj       = Bio::SeqIO->new(-file => $infile, '-format' => 'fasta');
+	my $in_obj       = Bio::SeqIO->new(-fh => $infileHandle, '-format' => 'fasta');
 	my $currentinput = $addstring;
 
 	#grab sequence object
@@ -285,20 +297,6 @@ sub get_gb
 	}
 }
 
-sub checkempty
-{
-	my $infile  = $_[0];
-	my $outfile = $_[1];
-
-	if (-z $infile){
-		open(OUTFILE, ">$outfile") or die "File cannot be opened\n";
-		print OUTFILE "EMPTY\tEMPTY\tEMPTY\t**No Hits found\n";
-		close(OUTFILE);
-	}else{
-		system "cp $infile $outfile";
-	}
-}
-
 sub get_seqs
 {
 	#
@@ -353,12 +351,12 @@ ENDHERE
 	#
 	my ($help, $dbfile, $tablefile, $id_col, $ignorecase, $cosorted, $selected, $unselected, $gzip, $paired);
 
-	$dbfile     = $_[0];
-	$tablefile  = $_[1];
-	$id_col     = $_[2];
+	$dbfile     = $_[0]; # BLAST database
+	$tablefile  = $_[1]; # BLAST output file
+	$id_col     = $_[2]; # Get data from that column
 	$ignorecase = $_[3];
 	$cosorted   = $_[4];
-	$selected   = $_[5];
+	$selected   = $_[5]; # To be saved
 	$unselected = $_[6];
 	$gzip       = $_[7];
 	$paired     = $_[8];
@@ -381,7 +379,7 @@ ENDHERE
 	die("DB required\n")                      unless    $dbfile;
 	die("DB file not found: $dbfile\n")       unless -f $dbfile;
 	die("Table required\n")                   unless    $tablefile;
-	die("Table file not found: $tablefile\n") unless -f $tablefile;
+	die("Table file not found: $tablefile\n") unless -f $tablefile or $tablefile == openhandle($tablefile);
 	$selected   = '' if !defined($selected)   or $selected   eq 'None';
 	$unselected = '' if !defined($unselected) or $unselected eq 'None';
 	$id_col=1 unless $id_col;
@@ -451,7 +449,14 @@ sub search_cosorted
 
 	# OPEN FILES
 	if ($tablefile) {
-		open($table, "<$tablefile") or die("Unable to open file, $tablefile: $!\n");
+		if($tablefile == openhandle($tablefile))
+		{
+			$table = $tablefile;
+		}
+		else
+		{
+			open($table, "<$tablefile") or die("Unable to open file, $tablefile: $!\n");
+		}
 	} else {
 		$table=*STDIN;
 	}
@@ -460,7 +465,14 @@ sub search_cosorted
 		if ($gzip) {
 #			open($sfh, '>:gzip', $selected) or die("Unable to open file, $selected: $!\n");
 		} else {
-			open($sfh, ">$selected") or die("Unable to open file, $selected: $!\n");
+			if($selected == openhandle($selected))
+			{
+				$sfh = $selected;
+			}
+			else
+			{
+				open($sfh, ">$selected") or die("Unable to open file, $selected: $!\n");
+			}
 		}
 	} else {
 		open($sfh, ">/dev/null");
@@ -469,7 +481,14 @@ sub search_cosorted
 		if ($gzip) {
 #			open($ufh, '>:gzip', $unselected) or die("Unable to open file, $unselected: $!\n");
 		} else {
-			open($ufh, ">$unselected") or die("Unable to open file, $unselected: $!\n");
+			if($unselected == openhandle($unselected))
+			{
+				$ufh = $unselected;
+			}
+			else
+			{
+				open($ufh, ">$unselected") or die("Unable to open file, $unselected: $!\n");
+			}
 		}
 	} else {
 		open($ufh, ">/dev/null");
@@ -580,7 +599,14 @@ sub search
 	my %ids          = ();
 	open(DB,    "<$dbfile")    or die("Unable to open file, $dbfile: $!\n");
 	if ($tablefile) {
-		open($table, "<$tablefile") or die("Unable to open file, $tablefile: $!\n");
+		if($tablefile == openhandle($tablefile))
+		{
+			$table = $tablefile;
+		}
+		else
+		{
+			open($table, "<$tablefile") or die("Unable to open file, $tablefile: $!\n");
+		}
 	} else {
 		$table=*STDIN;
 	}
@@ -588,7 +614,14 @@ sub search
 		if ($gzip) {
 #			open($sfh, '>:gzip', $selected) or die("Unable to open file, $selected: $!\n");
 		} else {
-			open($sfh, ">$selected") or die("Unable to open file, $selected: $!\n");
+			if($selected == openhandle($selected))
+			{
+				$sfh = $selected;
+			}
+			else
+			{
+				open($sfh, ">$selected") or die("Unable to open file, $selected: $!\n");
+			}
 		}
 	} else {
 		open($sfh, ">/dev/null");
@@ -597,7 +630,14 @@ sub search
 		if ($gzip) {
 #			open($ufh, '>:gzip', $unselected) or die("Unable to open file, $unselected: $!\n");
 		} else {
-			open($ufh, ">$unselected") or die("Unable to open file, $unselected: $!\n");
+			if($unselected == openhandle($unselected))
+			{
+				$ufh = $unselected;
+			}
+			else
+			{
+				open($ufh, ">$unselected") or die("Unable to open file, $unselected: $!\n");
+			}
 		}
 	} else {
 		open($ufh, ">/dev/null");
