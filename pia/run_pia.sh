@@ -70,12 +70,9 @@ for file in *.fasta ; do
 
 	perl "$DIR"/phylographics/makeRtrees.pl treeout.tab trees.pdf phylogram no None Rfile yes no >tree.R
 
-	R --vanilla < tree.R 2>log.txt
+	R --vanilla --slave < tree.R 2>R-stderr-Log.txt
 
 	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
 	cd ../../
 
 done
-
-
-
