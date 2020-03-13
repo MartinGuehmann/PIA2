@@ -766,39 +766,44 @@ sub genetree_read_placement
 		system "cp $path.tre RAxML_labelledTree.".$thisgene;
 		system "cp $path.tre RAxML_originalLabelledTree.".$thisgene;
 	}else{
-		print "Aligning Hits to known sequences using $align....\n\n";
-		#First concatenate fasta files and align
 
+		my $ToALignFile    = $filename . "." . $genefamily . ".toalign.fasta";
+		my $AlignedFile    = $filename . "." . $genefamily . ".aligned.fasta";
+		my $AlignedPhy     = $filename . "." . $genefamily . ".aligned.phy";
+
+		print "Aligning Hits to known sequences using $align....\n\n";
+
+		#First concatenate fasta files and align
 		if($align eq "muscle"){
 			print "Align with MUSCLE\n";
-			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
+			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
 			system "muscle -version";
-			system "muscle -in toalign.fas -out aligned.fas -quiet";
+			system "muscle -in $ToALignFile -out $AlignedFile -quiet";
 		}
 		elsif($align eq "mafft") {
 			print "Using MAFFT ";
 			qx(mafft --version);
-			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
-			system "mafft --thread $numThreads --quiet --auto toalign.fas > aligned.fas";
+			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
+			system "mafft --thread $numThreads --quiet --auto $ToALignFile > $AlignedFile ";
 		}
 		elsif($align eq "mafftprofile") {
 			print "Using MAFFT-profile ";
 			qx(mafft --version);
-#			system "echo \"$newgenes\" | cat - $path.fas.aligned > toalign.fas";
-			system "mafft --thread $numThreads --add $newgenes --reorder $path.fas.aligned > aligned.fas";
+#			system "echo \"$newgenes\" | cat - $path.fas.aligned > $ToALignFile";
+			system "mafft --thread $numThreads --add $newgenes --reorder $path.fas.aligned > $AlignedFile";
 		}
 		elsif($align eq "prank") {
-			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
-			system "prank -d=toalign.fas -o=aligned -f=fasta -F";
-			system "mv aligned.2.fas aligned.fas";
+			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
+			system "prank -d=$ToALignFile -o=aligned -f=fasta -F";
+			system "mv aligned.2.fas $AlignedFile";
 		}
 
 		# Convert to phylip format, uses seqConverter.pl
-		system path($0)->parent->child("seqConverterG.pl") . " -daligned.fas -ope -Oaligned.phy";
+		system path($0)->parent->child("seqConverterG.pl") . " -d$AlignedFile -ope -O$AlignedPhy";
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
 		# @ToDo: Add recalculate everything option to for deleting the RAxML output
-		system "raxmlHPC -f v -s aligned.phy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
+		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
 	}
 
 	#RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
