@@ -23,9 +23,6 @@ my $dataFileName = "LIT_1.1.txt";
 my $DATADIR      = path($0)->parent->child("$SUBDIR");
 my $dataFile     = path("$DATADIR")->child($dataFileName);
 
-#test tab delim output
-system "touch allhits.tab";
-
 # First, read in the data table with gene name, path, etc
 # Place these data into a hash
 open(BLASTFILE, "<$dataFile") or die "File $dataFileName file must be available check full path in pia.pl";
@@ -89,7 +86,20 @@ if($scope eq "single"){
 my($filename, $dirs, $suffix) = File::Basename::fileparse($data_file, qr/\.[^.]*/);
 my $BLASTDB = $filename . ".blastDB";
 
-system "echo '' > allhits.fas"; # File to retain all hits found from all gene families in the run
+# Files to retain all hits found from all gene families in the run
+my $AllHitsCSVFile = $filename . "." . $genefamily . ".allhits.csv";
+my $AllHitsFasFile = $filename . "." . $genefamily . ".allhits.fasta";
+
+if(-f $AllHitsCSVFile)
+{
+	unlink $AllHitsCSVFile;
+}
+
+if(-f $AllHitsFasFile)
+{
+	unlink  $AllHitsFasFile;
+}
+
 print ".........Creating Blast Database: $BLASTDB\n";
 system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
 
@@ -145,50 +155,58 @@ while($thisgene = shift(@genes2analyze) ) {
 
 	print $decoratedHits;
 
+	my $fastaToAdd = "";
+	open($fh,   ">", \$fastaToAdd);
 	open($hits, "<", \$decoratedHits);
 	#Next add string to identify gene family to beginning of hits
-	addstring2fashead($hits, $HoH{$thisgene}{fastatag});
+	addstring2fashead($hits, $HoH{$thisgene}{fastatag}, $fh);
 	close($hits);
+	close($fh);
 
 	# Place the reads with raxml
 
 	# Add the full path
 	my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
 	chomp($path);
-	genetree_read_placement("addfile.fas",$alignment,$path,$thisgene);
-	system "cat addfile.fas >> allhits.fas";
-	system "rm addfile.fas";
+
+	genetree_read_placement($fastaToAdd, $alignment, $path, $thisgene);
+
+	open(my $myHandle, ">>$AllHitsFasFile");
+	$myHandle->print($fastaToAdd);
+	close($myHandle);
 }
 
 sub addstring2fashead
 {
-	my $infileHandle = $_[0];
-	my $addstring    = $_[1];
-	my $in_obj       = Bio::SeqIO->new(-fh => $infileHandle, '-format' => 'fasta');
-	my $currentinput = $addstring;
+	my $infileHandle  = $_[0];
+	my $addstring     = $_[1];
+	my $addFileHanler = $_[2];
+	my $in_obj        = Bio::SeqIO->new(-fh => $infileHandle, '-format' => 'fasta');
+	my $currentinput  = $addstring;
 
-	#grab sequence object
-	open(ADDFILE, ">addfile.fas");
-	open(TABFILE, ">>allhits.tab");
+	# Grab sequence objects
+	my $csvFile;
+	open($csvFile, ">>$AllHitsCSVFile");
 
 	while (my $seq = $in_obj->next_seq() ) {
 		my $seq_obj = $in_obj;
 
 		my $seq_id = $currentinput.$seq->id;
-		print ADDFILE ">".$seq_id;
+		print $addFileHanler ">".$seq_id;
 		my $seq_seq = $seq->seq;
-		print ADDFILE "\n".$seq_seq."\n";
+		print $addFileHanler "\n".$seq_seq."\n";
 		# Extract just the name from the 'X_hit' string
 		$seq_id =~ s/\|ORF\d+// ;
 		my $left = index($seq_id, "_hit_")+5;
 		my $fragment = substr $seq_id, $left;
-		print TABFILE $fragment;
-		print TABFILE "\t".$seq_seq;
+		print $csvFile $fragment;
+		print $csvFile "\t".$seq_seq;
 		$fragment = substr $seq_id, 0, $left-1;
-		print TABFILE "\t".$fragment."\n";
+		print $csvFile "\t".$fragment."\n";
 	}
-	close(ADDFILE);
-	close(TABFILE);
+
+	close($csvFile);
+
 	return();
 }
 
@@ -739,19 +757,11 @@ sub genetree_read_placement
 	#my $path     = shift(@ARGV);       #2 path to tree and gene data
 	#my $name     = shift(@ARGV);       #3 name of gene family
 
-	# If $newgenes has no hits, do not place the reads, just write a tree with no hits
-	my $buffer;
-	my $lines = 0;
-	open(FILE, "$newgenes") or die "Can't open `$newgenes': $!";
-	while (sysread FILE, $buffer, 4096) {
-		$lines += ($buffer =~ tr/\n//);
-	}
-	close FILE;
-
 	#define outgroup using hash defined with all 
 	my $outgroup = $HoH{$thisgene}{outgroup};
 
-	if($lines < 1){
+	if($newgenes eq ""){
+		# If $newgenes has no hits, do not place the reads, just write a tree with no hits
 		print "No hits found. Skipping read placement\n Tree copied to output.\n";
 		system "cp $path.tre RAxML_labelledTree.".$thisgene;
 		system "cp $path.tre RAxML_originalLabelledTree.".$thisgene;
@@ -760,33 +770,34 @@ sub genetree_read_placement
 		#First concatenate fasta files and align
 
 		if($align eq "muscle"){
-			system "cat $newgenes $path.fas > toalign.fas";
-			print "Performing MUSCLE alignment\n";
+			print "Align with MUSCLE\n";
+			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
 			system "muscle -version";
 			system "muscle -in toalign.fas -out aligned.fas -quiet";
 		}
 		elsif($align eq "mafft") {
 			print "Using MAFFT ";
 			qx(mafft --version);
-			system "cat $newgenes $path.fas > toalign.fas";
+			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
 			system "mafft --thread $numThreads --quiet --auto toalign.fas > aligned.fas";
 		}
 		elsif($align eq "mafftprofile") {
 			print "Using MAFFT-profile ";
 			qx(mafft --version);
-#			system "cat $newgenes $path.fas.aligned > toalign.fas";
+#			system "echo \"$newgenes\" | cat - $path.fas.aligned > toalign.fas";
 			system "mafft --thread $numThreads --add $newgenes --reorder $path.fas.aligned > aligned.fas";
 		}
 		elsif($align eq "prank") {
-			system "cat $newgenes $path.fas > toalign.fas";
+			system "echo \"$newgenes\" | cat - $path.fas > toalign.fas";
 			system "prank -d=toalign.fas -o=aligned -f=fasta -F";
 			system "mv aligned.2.fas aligned.fas";
 		}
 
-		#convert to phylip format, uses seqConverter.pl
+		# Convert to phylip format, uses seqConverter.pl
 		system path($0)->parent->child("seqConverterG.pl") . " -daligned.fas -ope -Oaligned.phy";
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
+		# @ToDo: Add recalculate everything option to for deleting the RAxML output
 		system "raxmlHPC -f v -s aligned.phy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
 	}
 
@@ -794,6 +805,7 @@ sub genetree_read_placement
 	my @outgroups = split(',', $outgroup);
 	print "Using phyutility to root with OUTGROUPS determined from midpoint rooting\n: @outgroups\n";
 	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$thisgene." -out RootedTree.".$thisgene." -names @outgroups";
+
 	#Now make tab delimited file to use in tab2trees
 	#open treefile to read tree line
 	#system "cat RAxML_info.$thisgene";
