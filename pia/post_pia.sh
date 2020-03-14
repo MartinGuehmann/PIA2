@@ -29,31 +29,32 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 ###  Identify tips longer than ___ median absolute deviations of the tree's branch lengths. Modify number to change MAD multiplier.
 ###  long_branch_finder2.py can be reverted to calculate standard deviations instead of MADs. More info as comments in the script.
 
-python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py treeout.tab 4 > hits_to_prune.list
+python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py "${1}.${2}.treeout.csv" 4 > "${1}.${2}.hits_to_prune.list"
 
 
 ### Clean the output of the long branch finder to avoid conflicts downstream.
 
-python "$DIR"/cleanhits.py hits_to_prune.list > hits_to_prune.clean.list
+python "$DIR"/cleanhits.py "${1}.${2}.hits_to_prune.list" > "${1}.${2}.hits_to_prune.clean.list"
 
 
-### Fix PIA's allhits.tab into proper phytab, then removes the | from old assemblies.
+### Fix PIA's allhits.csv into proper phytab, then removes the | from old assemblies.
 
-awk -F '\t' '{print $1"\t"$3"\t"$2}' allhits.tab > allhits.fixed.tab
-sed -ie "s/|/_/g" allhits.fixed.tab
+awk -F '\t' '{print $1"\t"$3"\t"$2}' "${1}.${2}.allhits.csv" > "${1}.${2}.allhits.fixed.csv"
+sed -ie "s/|/_/g" "${1}.${2}.allhits.fixed.csv"
 
 
 ### Remove entries from PIA results phytab file that match to a list.
 
-python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py allhits.fixed.tab hits_to_prune.clean.list discard > allhits.pruned.tab
+python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py "${1}.${2}.allhits.fixed.csv" "${1}.${2}.hits_to_prune.clean.list" discard > "${1}.${2}.allhits.pruned.csv"
 
 
 ### Convert back to FASTA
 
 
-awk '{print ">"$1"_"$2"\n"$3}' allhits.pruned.tab > allhits.pruned.fasta
+awk '{print ">"$1"_"$2"\n"$3}' "${1}.${2}.allhits.pruned.csv" > "${1}.${2}.allhits.pruned.fasta"
 
 
 ### Remove duplicated sequences resulting from translation of similar isoforms.
 
-usearch -cluster_fast allhits.pruned.fasta -sort length -id 1.00 -threads ${3} -centroids "${1}.${2}.PIA.results.fasta"
+usearch -cluster_fast "${1}.${2}.allhits.pruned.fasta" -sort length -id 1.00 -threads ${3} -centroids "${1}.${2}.PIA.results.fasta"
+

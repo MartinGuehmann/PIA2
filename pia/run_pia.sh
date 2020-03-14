@@ -68,9 +68,9 @@ for file in *.fasta ; do
 
 	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads
 
-	perl "$DIR"/phylographics/makeRtrees.pl treeout.tab trees.pdf phylogram no None Rfile yes no >tree.R
+	perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${ORF_FILE_BASE}.$gene.trees.pdf" phylogram no None Rfile yes no >"${ORF_FILE_BASE}.$gene.tree.R"
 
-	R --vanilla --slave < tree.R 2>R-stderr-Log.txt
+	R --vanilla --slave < "${ORF_FILE_BASE}.$gene.tree.R" 2>R-stderr-Log.txt
 
 	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
 	cd ../../

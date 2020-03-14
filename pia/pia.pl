@@ -89,6 +89,7 @@ my $BLASTDB = $filename . ".blastDB";
 # Files to retain all hits found from all gene families in the run
 my $AllHitsCSVFile = $filename . "." . $genefamily . ".allhits.csv";
 my $AllHitsFasFile = $filename . "." . $genefamily . ".allhits.fasta";
+my $FinalTreeFile  = $filename . "." . $genefamily . ".treeout.csv";
 
 if(-f $AllHitsCSVFile)
 {
@@ -98,6 +99,11 @@ if(-f $AllHitsCSVFile)
 if(-f $AllHitsFasFile)
 {
 	unlink  $AllHitsFasFile;
+}
+
+if(-f $FinalTreeFile)
+{
+	unlink $FinalTreeFile;
 }
 
 print ".........Creating Blast Database: $BLASTDB\n";
@@ -767,9 +773,9 @@ sub genetree_read_placement
 		system "cp $path.tre RAxML_originalLabelledTree.".$thisgene;
 	}else{
 
-		my $ToALignFile    = $filename . "." . $genefamily . ".toalign.fasta";
-		my $AlignedFile    = $filename . "." . $genefamily . ".aligned.fasta";
-		my $AlignedPhy     = $filename . "." . $genefamily . ".aligned.phy";
+		my $ToALignFile    = $filename . "." . $thisgene . ".toalign.fasta";
+		my $AlignedFile    = $filename . "." . $thisgene . ".aligned.fasta";
+		my $AlignedPhy     = $filename . "." . $thisgene . ".aligned.phy";
 
 		print "Aligning Hits to known sequences using $align....\n\n";
 
@@ -806,15 +812,17 @@ sub genetree_read_placement
 		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
 	}
 
+	my $RootedTree = $filename . "." . $thisgene . ".RootedTree";
+
 	#RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
 	my @outgroups = split(',', $outgroup);
 	print "Using phyutility to root with OUTGROUPS determined from midpoint rooting\n: @outgroups\n";
-	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$thisgene." -out RootedTree.".$thisgene." -names @outgroups";
+	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$thisgene." -out $RootedTree -names @outgroups";
 
 	#Now make tab delimited file to use in tab2trees
 	#open treefile to read tree line
 	#system "cat RAxML_info.$thisgene";
-	open(TREE, "<","RootedTree.".$thisgene) or die "Can't open Rooted Tree File! Rooting requires phyutility";
+	open(TREE, "<",$RootedTree) or die "Can't open Rooted Tree File! Rooting requires phyutility";
 	my $finaltree;
 	while (<TREE>){
 		if($_ =~ /\;/m){
@@ -828,7 +836,7 @@ sub genetree_read_placement
 	chomp($name);
 	#remove clade labels
 	$finaltree =~ s/\[I\d+\]//g;
-	open(TAB, '>>treeout.tab') or die "Can't open File!";
+	open(TAB, ">>$FinalTreeFile") or die "Can't open File!";
 	print TAB $name."\t".$finaltree."\n";
 	#print $name."\t".$finaltree."\n";
 	close TAB;
