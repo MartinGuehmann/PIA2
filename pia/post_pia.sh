@@ -55,6 +55,9 @@ awk '{print ">"$1"_"$2"\n"$3}' "${1}.${2}.allhits.pruned.csv" > "${1}.${2}.allhi
 
 
 ### Remove duplicated sequences resulting from translation of similar isoforms.
-
-usearch -cluster_fast "${1}.${2}.allhits.pruned.fasta" -sort length -id 1.00 -threads ${3} -centroids "${1}.${2}.PIA.results.fasta"
-
+if [ -s "${1}.${2}.allhits.pruned.fasta" ]
+then
+	usearch -cluster_fast "${1}.${2}.allhits.pruned.fasta" -sort length -id 1.00 -threads ${3} -centroids "${1}.${2}.PIA.results.fasta"
+else
+	cp "${1}.${2}.allhits.fasta" "${1}.${2}.PIA.results.fasta"
+fi
