@@ -11,14 +11,22 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 CURDIR="$(pwd)"
 SUBDIR="pia"
 
+rebuildDatabases="0"
+rebuildTrees="0"
+
 # Idiomatic parameter and option handling in sh
 # Adapted from https://superuser.com/questions/186272/check-if-any-of-the-parameters-to-a-bash-script-match-a-string
 # And advanced version is here https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash/7069755#7069755
 while test $# -gt 0
 do
     case "$1" in
+        --getORFsagain)
+            echo "Get open reading frames again and rebuild the BLAST database(s)"
+            getORFsAgain="true"
+            rebuildDatabases="1"
+            ;;
         --rebuildDatabases)
-            echo "Existing BLAST databases will be rebuilt"
+            echo "Existing BLAST database(s) will be rebuilt"
             rebuildDatabases="true" # Could be any value, we actually check, whether it has been defined
             ;;
         --*)
@@ -60,13 +68,13 @@ for file in *.fasta ; do
 	ORF_FILE_BASE="${filebase}_ORF_${aalength}aa"
 	ORF_FILE="${ORF_FILE_BASE}.fasta"
 
- 	if [ ! -f "$ORF_FILE" -o "$rebuildDatabases" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
+ 	if [ ! -f "$ORF_FILE" -o "$getORFsAgain" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
 	then
 		# The file get_orfs_or_cdss.py is from the pico_galaxy repository. Install that next to your PIA2/pia/ directory. So this is two levels up of this script.
 		python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op "$ORF_FILE"
 	fi
 
-	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads
+	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads $rebuildDatabases
 
 	perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${ORF_FILE_BASE}.$gene.trees.pdf" phylogram no None Rfile yes no >"${ORF_FILE_BASE}.$gene.tree.R"
 

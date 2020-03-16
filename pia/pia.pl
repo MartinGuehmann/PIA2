@@ -58,14 +58,15 @@ close(BLASTFILE);
 #exit;
 
 #Get arguments from xml in galaxy
-#my $command   = shift(@ARGV);      # 0 pia.pl command
-my $data_file  = shift(@ARGV);      # 1 data file to search
-my $scope      = shift(@ARGV);      # 2 scope [all|single|set]
-my $genefamily = shift(@ARGV);      # 3 [NULL|name of set|name of family|
-my $alignment  = shift(@ARGV);      # 4 Alignment algorithm, e.g. mafft
-my $evalue     = shift(@ARGV);      # 5 E-value
-my $maxkeep    = shift(@ARGV);      # 6 Maximum blast hits to retain
-my $numThreads = shift(@ARGV);      # 7 The number of CPU cores
+#my $command       = shift(@ARGV);      # 0 pia.pl command
+my $data_file      = shift(@ARGV);      # 1 data file to search
+my $scope          = shift(@ARGV);      # 2 scope [all|single|set]
+my $genefamily     = shift(@ARGV);      # 3 [NULL|name of set|name of family|
+my $alignment      = shift(@ARGV);      # 4 Alignment algorithm, e.g. mafft
+my $evalue         = shift(@ARGV);      # 5 E-value
+my $maxkeep        = shift(@ARGV);      # 6 Maximum blast hits to retain
+my $numThreads     = shift(@ARGV);      # 7 The number of CPU cores
+my $rebuildBLASTdb = shift(@ARGV);      # 8 Whether to rebuild the BLAST database
 
 my @genes2analyze;
 
@@ -106,8 +107,15 @@ if(-f $FinalTreeFile)
 	unlink $FinalTreeFile;
 }
 
-print ".........Creating Blast Database: $BLASTDB\n";
-system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
+if( ! -f "$BLASTDB.phr" or $rebuildBLASTdb)
+{
+	print ".........Creating Blast Database: $BLASTDB\n";
+	system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
+}
+else
+{
+	print ".........Use existing Blast database: $BLASTDB\n";
+}
 
 my $thisgene;
 while($thisgene = shift(@genes2analyze) ) {
