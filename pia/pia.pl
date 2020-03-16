@@ -197,7 +197,7 @@ sub addstring2fashead
 	while (my $seq = $in_obj->next_seq() ) {
 		my $seq_obj = $in_obj;
 
-		my $seq_id = $currentinput.$seq->id;
+		my $seq_id = $currentinput.$seq->id; # Combined ID geneName_origID
 		print $addFileHanler ">".$seq_id;
 		my $seq_seq = $seq->seq;
 		print $addFileHanler "\n".$seq_seq."\n";
@@ -205,10 +205,10 @@ sub addstring2fashead
 		$seq_id =~ s/\|ORF\d+// ;
 		my $left = index($seq_id, "_hit_")+5;
 		my $fragment = substr $seq_id, $left;
-		print $csvFile $fragment;
-		print $csvFile "\t".$seq_seq;
+		print $csvFile $fragment;                        # Print originqal ID
 		$fragment = substr $seq_id, 0, $left-1;
-		print $csvFile "\t".$fragment."\n";
+		print $csvFile "\t".$fragment;                   # Print name of putative gene
+		print $csvFile "\t".$seq_seq."\n";               # Print sequence
 	}
 
 	close($csvFile);

@@ -37,15 +37,14 @@ python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py "${1}.${
 python "$DIR"/cleanhits.py "${1}.${2}.hits_to_prune.list" > "${1}.${2}.hits_to_prune.clean.list"
 
 
-### Fix PIA's allhits.csv into proper phytab, then removes the | from old assemblies.
+### Then Remove the | from old assemblies.
 
-awk -F '\t' '{print $1"\t"$3"\t"$2}' "${1}.${2}.allhits.csv" > "${1}.${2}.allhits.fixed.csv"
-sed -ie "s/|/_/g" "${1}.${2}.allhits.fixed.csv"
+sed -ie "s/|/_/g" "${1}.${2}.allhits.csv"
 
 
 ### Remove entries from PIA results phytab file that match to a list.
 
-python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py "${1}.${2}.allhits.fixed.csv" "${1}.${2}.hits_to_prune.clean.list" discard > "${1}.${2}.allhits.pruned.csv"
+python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py "${1}.${2}.allhits.csv" "${1}.${2}.hits_to_prune.clean.list" discard > "${1}.${2}.allhits.pruned.csv"
 
 
 ### Convert back to FASTA
