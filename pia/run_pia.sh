@@ -21,13 +21,19 @@ while test $# -gt 0
 do
     case "$1" in
         --getORFsagain)
-            echo "Get open reading frames again and rebuild the BLAST database(s)"
+            echo "Get open reading frames again, rebuild the BLAST database(s), and the RAxML tree(s)"
             getORFsAgain="true"
             rebuildDatabases="1"
+            rebuildTrees="1"
             ;;
         --rebuildDatabases)
-            echo "Existing BLAST database(s) will be rebuilt"
+            echo "Existing BLAST database(s) and RAxML tree(s) will be rebuilt"
             rebuildDatabases="true" # Could be any value, we actually check, whether it has been defined
+            rebuildTrees="1"
+            ;;
+        --rebuildTrees)
+            echo "Rebuild RAxML tree(s)"
+            rebuildTrees="1"
             ;;
         --*)
             echo "bad option $1 is ignored"
@@ -74,7 +80,7 @@ for file in *.fasta ; do
 		python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op "$ORF_FILE"
 	fi
 
-	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads $rebuildDatabases
+	perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads $rebuildDatabases $rebuildTrees
 
 	perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${ORF_FILE_BASE}.$gene.trees.pdf" phylogram no None Rfile yes no >"${ORF_FILE_BASE}.$gene.tree.R"
 

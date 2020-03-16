@@ -67,6 +67,7 @@ my $evalue         = shift(@ARGV);      # 5 E-value
 my $maxkeep        = shift(@ARGV);      # 6 Maximum blast hits to retain
 my $numThreads     = shift(@ARGV);      # 7 The number of CPU cores
 my $rebuildBLASTdb = shift(@ARGV);      # 8 Whether to rebuild the BLAST database
+my $rebuilTrees    = shift(@ARGV);      # 9 Whether to rebuild the RAxML trees
 
 my @genes2analyze;
 
@@ -111,6 +112,8 @@ if( ! -f "$BLASTDB.phr" or $rebuildBLASTdb)
 {
 	print ".........Creating Blast Database: $BLASTDB\n";
 	system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
+
+	$rebuilTrees = 1;
 }
 else
 {
@@ -814,6 +817,15 @@ sub genetree_read_placement
 
 		# Convert to phylip format, uses seqConverter.pl
 		system path($0)->parent->child("seqConverterG.pl") . " -d$AlignedFile -ope -O$AlignedPhy";
+
+		if( -f "RAxML_classification."                  . $thisgene            and $rebuilTrees) { unlink "RAxML_classification."                  . $thisgene;            }
+		if( -f "RAxML_classificationLikelihoodWeights." . $thisgene            and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $thisgene;            }
+		if( -f "RAxML_entropy."                         . $thisgene            and $rebuilTrees) { unlink "RAxML_entropy."                         . $thisgene;            }
+		if( -f "RAxML_info."                            . $thisgene            and $rebuilTrees) { unlink "RAxML_info."                            . $thisgene;            }
+		if( -f "RAxML_labelledTree."                    . $thisgene            and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $thisgene;            }
+		if( -f "RAxML_originalLabelledTree."            . $thisgene            and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $thisgene;            }
+		if( -f "RAxML_portableTree."                    . $thisgene . "jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $thisgene . "jplace"; }
+
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
 		# @ToDo: Add recalculate everything option to for deleting the RAxML output
