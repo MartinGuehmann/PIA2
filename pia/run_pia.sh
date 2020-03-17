@@ -76,6 +76,7 @@ for file in *.fasta ; do
 
  	if [ ! -f "$ORF_FILE" -o "$getORFsAgain" ] # Build the dataBase if it does not exits or the rebuild argument is supplied
 	then
+		echo "Extract open reading frames from $file"
 		# The file get_orfs_or_cdss.py is from the pico_galaxy repository. Install that next to your PIA2/pia/ directory. So this is two levels up of this script.
 		python "$DIR"/../../pico_galaxy/tools/get_orfs_or_cdss/get_orfs_or_cdss.py -i <(tr -d '\000' < $CURDIR/$file) -e open -m all --min_len $aalength --op "$ORF_FILE"
 	fi
