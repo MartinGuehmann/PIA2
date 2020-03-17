@@ -818,13 +818,13 @@ sub genetree_read_placement
 		# Convert to phylip format, uses seqConverter.pl
 		system path($0)->parent->child("seqConverterG.pl") . " -d$AlignedFile -ope -O$AlignedPhy";
 
-		if( -f "RAxML_classification."                  . $thisgene            and $rebuilTrees) { unlink "RAxML_classification."                  . $thisgene;            }
-		if( -f "RAxML_classificationLikelihoodWeights." . $thisgene            and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $thisgene;            }
-		if( -f "RAxML_entropy."                         . $thisgene            and $rebuilTrees) { unlink "RAxML_entropy."                         . $thisgene;            }
-		if( -f "RAxML_info."                            . $thisgene            and $rebuilTrees) { unlink "RAxML_info."                            . $thisgene;            }
-		if( -f "RAxML_labelledTree."                    . $thisgene            and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $thisgene;            }
-		if( -f "RAxML_originalLabelledTree."            . $thisgene            and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $thisgene;            }
-		if( -f "RAxML_portableTree."                    . $thisgene . "jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $thisgene . "jplace"; }
+		if( -f "RAxML_classification."                  . $thisgene             and $rebuilTrees) { unlink "RAxML_classification."                  . $thisgene;             }
+		if( -f "RAxML_classificationLikelihoodWeights." . $thisgene             and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $thisgene;             }
+		if( -f "RAxML_entropy."                         . $thisgene             and $rebuilTrees) { unlink "RAxML_entropy."                         . $thisgene;             }
+		if( -f "RAxML_info."                            . $thisgene             and $rebuilTrees) { unlink "RAxML_info."                            . $thisgene;             }
+		if( -f "RAxML_labelledTree."                    . $thisgene             and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $thisgene;             }
+		if( -f "RAxML_originalLabelledTree."            . $thisgene             and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $thisgene;             }
+		if( -f "RAxML_portableTree."                    . $thisgene . ".jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $thisgene . ".jplace"; }
 
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
