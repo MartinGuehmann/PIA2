@@ -17,9 +17,9 @@ use Scalar::Util qw(openhandle);
 use File::Basename ();
 my $PIADIR       = File::Basename::dirname($0);
 my $SUBDIR       = "LIT_1.1";
-my $dataFileName = "LIT_1.1.txt";
+my $dataFileName = "LIT_1.1.csv";
 
-# The directory where precalculated genetrees and LIT_1.1.txt file are located must match this:
+# The directory where precalculated genetrees and LIT_1.1.csv file are located must match this:
 my $DATADIR      = path($0)->parent->child("$SUBDIR");
 my $dataFile     = path("$DATADIR")->child($dataFileName);
 
