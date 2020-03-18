@@ -35,11 +35,11 @@ while(<BLASTFILE>) {
 	if($currentinput =~ /\t/){
 		my @genedata = split(/\t/);
 		my $genename = $genedata[0];
-		$HoH{$genename}{set} = $genedata[1];
-		$HoH{$genename}{bait} = $genedata[2];
-		$HoH{$genename}{fastatag} = $genedata[3];
+		$HoH{$genename}{set}         = $genedata[1];
+		$HoH{$genename}{bait}        = $genedata[2];
+		$HoH{$genename}{fastatag}    = $genedata[3];
 		$HoH{$genename}{reftreename} = $genedata[4];
-		$HoH{$genename}{outgroup} = $genedata[5];
+		$HoH{$genename}{outgroup}    = $genedata[5];
 	}else{
 		die "File named genelist.txt must be availalbe in tab delimited format with gene data\n";
 	}
@@ -828,7 +828,6 @@ sub genetree_read_placement
 
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
-		# @ToDo: Add recalculate everything option to for deleting the RAxML output
 		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
 	}
 
