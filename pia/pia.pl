@@ -797,6 +797,8 @@ sub genetree_read_placement
 			system "muscle -version";
 			system "muscle -in $ToALignFile -out $AlignedFile -quiet";
 		}
+		# MAFFT is annoying, it cuts the sequence ID to 50 characters,
+		# replaces hyphens and dots with underscores.
 		elsif($align eq "mafft") {
 			print "Using MAFFT ";
 			qx(mafft --version);
