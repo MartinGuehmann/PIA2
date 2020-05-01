@@ -108,7 +108,7 @@ if(-f $FinalTreeFile)
 	unlink $FinalTreeFile;
 }
 
-if( ! -f "$BLASTDB.phr" or $rebuildBLASTdb)
+if( (! -f "$BLASTDB.phr" and ! -f "$BLASTDB.pal") or $rebuildBLASTdb)
 {
 	print ".........Creating Blast Database: $BLASTDB\n";
 	system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
