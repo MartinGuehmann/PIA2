@@ -767,26 +767,26 @@ sub genetree_read_placement
 	my $newgenes = $_[0];
 	my $align    = $_[1];
 	my $path     = $_[2];
-	my $name     = $_[3];
+	my $gene     = $_[3];
 
 	#my $newgenes = shift(@ARGV);       #0 new genes to align
 	#my $align    = shift(@ARGV);       #1 alignment program to use
 	#my $path     = shift(@ARGV);       #2 path to tree and gene data
-	#my $name     = shift(@ARGV);       #3 name of gene family
+	#my $gene     = shift(@ARGV);       #3 name of the current gene
 
 	#define outgroup using hash defined with all 
-	my $outgroup = $HoH{$thisgene}{outgroup};
+	my $outgroup = $HoH{$gene}{outgroup};
 
 	if($newgenes eq ""){
 		# If $newgenes has no hits, do not place the reads, just write a tree with no hits
 		print "No hits found. Skipping read placement\n Tree copied to output.\n";
-		system "cp $path.tre RAxML_labelledTree.".$thisgene;
-		system "cp $path.tre RAxML_originalLabelledTree.".$thisgene;
+		system "cp $path.tre RAxML_labelledTree.".$gene;
+		system "cp $path.tre RAxML_originalLabelledTree.".$gene;
 	}else{
 
-		my $ToALignFile    = $filename . "." . $thisgene . ".toalign.fasta";
-		my $AlignedFile    = $filename . "." . $thisgene . ".aligned.fasta";
-		my $AlignedPhy     = $filename . "." . $thisgene . ".aligned.phy";
+		my $ToALignFile    = $filename . "." . $gene . ".toalign.fasta";
+		my $AlignedFile    = $filename . "." . $gene . ".aligned.fasta";
+		my $AlignedPhy     = $filename . "." . $gene . ".aligned.phy";
 
 		print "Aligning Hits to known sequences using $align....\n\n";
 
@@ -820,25 +820,25 @@ sub genetree_read_placement
 		# Convert to phylip format, uses seqConverter.pl
 		system path($0)->parent->child("seqConverterG.pl") . " -d$AlignedFile -ope -O$AlignedPhy";
 
-		if( -f "RAxML_classification."                  . $thisgene             and $rebuilTrees) { unlink "RAxML_classification."                  . $thisgene;             }
-		if( -f "RAxML_classificationLikelihoodWeights." . $thisgene             and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $thisgene;             }
-		if( -f "RAxML_entropy."                         . $thisgene             and $rebuilTrees) { unlink "RAxML_entropy."                         . $thisgene;             }
-		if( -f "RAxML_info."                            . $thisgene             and $rebuilTrees) { unlink "RAxML_info."                            . $thisgene;             }
-		if( -f "RAxML_labelledTree."                    . $thisgene             and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $thisgene;             }
-		if( -f "RAxML_originalLabelledTree."            . $thisgene             and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $thisgene;             }
-		if( -f "RAxML_portableTree."                    . $thisgene . ".jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $thisgene . ".jplace"; }
+		if( -f "RAxML_classification."                  . $gene             and $rebuilTrees) { unlink "RAxML_classification."                  . $gene;             }
+		if( -f "RAxML_classificationLikelihoodWeights." . $gene             and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $gene;             }
+		if( -f "RAxML_entropy."                         . $gene             and $rebuilTrees) { unlink "RAxML_entropy."                         . $gene;             }
+		if( -f "RAxML_info."                            . $gene             and $rebuilTrees) { unlink "RAxML_info."                            . $gene;             }
+		if( -f "RAxML_labelledTree."                    . $gene             and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $gene;             }
+		if( -f "RAxML_originalLabelledTree."            . $gene             and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $gene;             }
+		if( -f "RAxML_portableTree."                    . $gene . ".jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $gene . ".jplace"; }
 
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
-		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $thisgene -T $numThreads";
+		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $gene -T $numThreads";
 	}
 
-	my $RootedTree = $filename . "." . $thisgene . ".RootedTree";
+	my $RootedTree = $filename . "." . $gene . ".RootedTree";
 
 	#RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
 	my @outgroups = split(',', $outgroup);
 	print "Using phyutility to root with OUTGROUPS determined from midpoint rooting\n: @outgroups\n";
-	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$thisgene." -out $RootedTree -names @outgroups";
+	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$gene." -out $RootedTree -names @outgroups";
 
 	#Now make tab delimited file to use in tab2trees
 	#open treefile to read tree line
@@ -853,12 +853,12 @@ sub genetree_read_placement
 	}
 	close TREE;
 
-	$name =~ s/ /_/g;
-	chomp($name);
+	$gene =~ s/ /_/g;
+	chomp($gene);
 	#remove clade labels
 	$finaltree =~ s/\[I\d+\]//g;
 	open(TAB, ">>$FinalTreeFile") or die "Can't open File!";
-	print TAB $name."\t".$finaltree."\n";
-	#print $name."\t".$finaltree."\n";
+	print TAB $gene."\t".$finaltree."\n";
+	#print $gene."\t".$finaltree."\n";
 	close TAB;
 }
