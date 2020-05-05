@@ -32,7 +32,7 @@ do
             ;;
         --search_type)
             shift
-            search_type"$1"
+            search_type="$1"
             ;;
         --gene)
             shift
