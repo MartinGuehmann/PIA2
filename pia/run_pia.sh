@@ -10,6 +10,9 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 CURDIR="$(pwd)"
 SUBDIR="pia"
+RESULTS_PREFIX="results_"
+ALL_DEST="All"
+RESULTS_FILE_ALL="${RESULTS_PREFIX}${ALL_DEST}"
 
 rebuildDatabases="0"    # Whether the BLAST database should be rebuild
 rebuildTrees="0"        # Whether to rebuild trees
@@ -71,16 +74,23 @@ do
     shift
 done
 
-for file in *.fasta ; do
+if [ ! -d "$SUBDIR" ]
+then
+	mkdir "$SUBDIR"
+fi
 
-	if [ ! -d "$SUBDIR" ]
-	then
-		mkdir "$SUBDIR"
-	fi
+if [ ! -d "$SUBDIR/$RESULTS_FILE_ALL" ]
+then
+	mkdir "$SUBDIR/$RESULTS_FILE_ALL"
+fi
+
+rm -f "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.$gene.allhits.fasta"
+
+for file in *.fasta ; do
 
 	cd "$SUBDIR"
 
-	RESULTS_FILE="results_${file}"
+	RESULTS_FILE="${RESULTS_PREFIX}${file}"
 
 	if [ ! -d "$RESULTS_FILE" ]
 	then
@@ -109,4 +119,23 @@ for file in *.fasta ; do
 	"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
 	cd ../../
 
+	cat "$CURDIR/$SUBDIR/$RESULTS_FILE/${ORF_FILE_BASE}.$gene.allhits.fasta" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.$gene.allhits.fasta"
+
 done
+
+cd "$SUBDIR/$RESULTS_FILE_ALL"
+
+file="${ALL_DEST}.fasta"
+
+filebase=$(basename ${file} ".fasta")
+ORF_FILE_BASE="${filebase}_ORF_${aalength}aa"
+ORF_FILE="${ORF_FILE_BASE}.fasta"
+
+perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads $rebuildDatabases $rebuildTrees
+
+perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${ORF_FILE_BASE}.$gene.trees.pdf" phylogram no None Rfile yes no >"${ORF_FILE_BASE}.$gene.tree.R"
+
+R --vanilla --slave < "${ORF_FILE_BASE}.$gene.tree.R" 2>R-stderr-Log.txt
+
+# *.allhits.cvs is missing, but doing this is not necessary for now
+#"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}

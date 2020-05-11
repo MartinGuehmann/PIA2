@@ -62,7 +62,7 @@ close(BLASTFILE);
 my $data_file      = shift(@ARGV);      # 1 data file to search
 my $scope          = shift(@ARGV);      # 2 scope [all|single|set]
 my $genefamily     = shift(@ARGV);      # 3 [NULL|name of set|name of family|
-my $alignment      = shift(@ARGV);      # 4 Alignment algorithm, e.g. mafft
+my $alignmentProg  = shift(@ARGV);      # 4 Alignment algorithm, e.g. mafft
 my $evalue         = shift(@ARGV);      # 5 E-value
 my $maxkeep        = shift(@ARGV);      # 6 Maximum blast hits to retain
 my $numThreads     = shift(@ARGV);      # 7 The number of CPU cores
@@ -86,111 +86,164 @@ if($scope eq "single"){
 }
 
 my($filename, $dirs, $suffix) = File::Basename::fileparse($data_file, qr/\.[^.]*/);
-my $BLASTDB = $filename . ".blastDB";
 
 # Files to retain all hits found from all gene families in the run
+my $FinalTreeFile  = $filename . "." . $genefamily . ".treeout.csv";
 my $AllHitsCSVFile = $filename . "." . $genefamily . ".allhits.csv";
 my $AllHitsFasFile = $filename . "." . $genefamily . ".allhits.fasta";
-my $FinalTreeFile  = $filename . "." . $genefamily . ".treeout.csv";
-
-if(-f $AllHitsCSVFile)
-{
-	unlink $AllHitsCSVFile;
-}
-
-if(-f $AllHitsFasFile)
-{
-	unlink  $AllHitsFasFile;
-}
 
 if(-f $FinalTreeFile)
 {
 	unlink $FinalTreeFile;
 }
 
-if( (! -f "$BLASTDB.phr" and ! -f "$BLASTDB.pal") or $rebuildBLASTdb)
+if(-f $data_file)
 {
-	print ".........Creating Blast Database: $BLASTDB\n";
-	system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
-
-	$rebuilTrees = 1;
+	fullPIA();
 }
 else
 {
-	print ".........Use existing Blast database: $BLASTDB\n";
+	placeOnlyInTree();
 }
 
-my $thisgene;
-while($thisgene = shift(@genes2analyze) ) {
-	print "\n\n\n**************Analyzing $thisgene ..............\n";
-	# Use get_gb to obtain sequence from genbank using accession(s) that are looked up based on gene name
-	# bait written to tempfile.tmp using get_gb subscript
-
-	my $fh;
-	my $query = "";
-	open($fh, ">", \$query);
-	my $accession = $HoH{$thisgene}{bait};
-
-	# No return value, $fh is passed by reference
-	get_gb('protein', 'fasta', $fh, $accession, '', '');
-	close($fh);
-
-	open($fh, "<", \$query);
-
-	# Next BLASTP data
-	system "blastp -version";
-	print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
-
-	my $command = "blastp"
-	            . " -query <(echo -e \"$query\") "
-	            . " -db "              . $BLASTDB
-	            . " -outfmt "          . 6
-	            . " -num_threads "     . $numThreads
-	            . " -evalue "          . $evalue
-	            . " -max_target_seqs " . $maxkeep;
-
-	my $finds   = qx(bash -c '$command');
-	close($fh);
-
-	# Add some text to the file when no blast hits have been found
-	if($finds eq "")
+sub placeOnlyInTree
+{
+	while(my $thisgene = shift(@genes2analyze) )
 	{
-		$finds = "EMPTY\tEMPTY\tEMPTY\t**No Hits found\n";
+		print "\n\n\n**************Placing $thisgene into tree..............\n";
+
+		# Place the reads with raxml
+
+		# Add the full path
+		my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
+		chomp($path);
+
+		my $fastaToAdd = "";
+
+		if($scope eq "single")
+		{
+			# Here we could use any file, even so it was not created by PIA before.
+			print $AllHitsFasFile, "\n";
+			open(my $myHandle, "<$AllHitsFasFile");
+			read $myHandle, $fastaToAdd, -s $myHandle;
+			close($myHandle);
+		}
+		else
+		{
+			my $in_obj     = Bio::SeqIO->new(-file => $AllHitsFasFile, '-format' => 'fasta');
+
+			while (my $seq = $in_obj->next_seq() )
+			{
+				# Use only the sequences of this gene
+				if($seq->id =~ m/^($thisgene)/)
+				{
+					$fastaToAdd = $fastaToAdd . ">" . $seq->id . "\n" . $seq->seq . "\n";
+				}
+			}
+		}
+
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene);
+	}
+}
+
+sub fullPIA
+{
+	if(-f $AllHitsCSVFile)
+	{
+		unlink $AllHitsCSVFile;
 	}
 
-	print $finds;
+	if(-f $AllHitsFasFile)
+	{
+		unlink $AllHitsFasFile;
+	}
 
-	open($fh, "<", \$finds);
-	my $decoratedHits = "";
-	my $hits;
-	open($hits, ">", \$decoratedHits);
+	my $BLASTDB = $filename . ".blastDB";
 
-	# Grab sequences from the input database. hits is temporary file containing hits that get_seqs will write to
-	get_seqs($data_file, $fh, "2", "", "", $hits, "", "", "", "");
-	close($fh);
-	# close($hits); # Already closed in sub of get_seqs.
+	if( (! -f "$BLASTDB.phr" and ! -f "$BLASTDB.pal") or $rebuildBLASTdb)
+	{
+		print ".........Creating Blast Database: $BLASTDB\n";
+		system "makeblastdb -in $data_file -out $BLASTDB -dbtype prot";
 
-	print $decoratedHits;
+		$rebuilTrees = 1;
+	}
+	else
+	{
+		print ".........Use existing Blast database: $BLASTDB\n";
+	}
 
-	my $fastaToAdd = "";
-	open($fh,   ">", \$fastaToAdd);
-	open($hits, "<", \$decoratedHits);
-	#Next add string to identify gene family to beginning of hits
-	addstring2fashead($hits, $HoH{$thisgene}{fastatag}, $fh);
-	close($hits);
-	close($fh);
+	while(my $thisgene = shift(@genes2analyze) )
+	{
+		print "\n\n\n**************Analyzing $thisgene ..............\n";
+		# Use get_gb to obtain sequence from genbank using accession(s) that are looked up based on gene name
+		# bait written to tempfile.tmp using get_gb subscript
 
-	# Place the reads with raxml
+		my $fh;
+		my $query = "";
+		open($fh, ">", \$query);
+		my $accession = $HoH{$thisgene}{bait};
 
-	# Add the full path
-	my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
-	chomp($path);
+		# No return value, $fh is passed by reference
+		get_gb('protein', 'fasta', $fh, $accession, '', '');
+		close($fh);
 
-	genetree_read_placement($fastaToAdd, $alignment, $path, $thisgene);
+		open($fh, "<", \$query);
 
-	open(my $myHandle, ">>$AllHitsFasFile");
-	$myHandle->print($fastaToAdd);
-	close($myHandle);
+		# Next BLASTP data
+		system "blastp -version";
+		print "...Searching data with BLASTP using an evalue of $evalue and retaining a maximum of $maxkeep (in case of tie, all genes are retained)\n\n";
+
+		my $command = "blastp"
+		            . " -query <(echo -e \"$query\") "
+		            . " -db "              . $BLASTDB
+		            . " -outfmt "          . 6
+		            . " -num_threads "     . $numThreads
+		            . " -evalue "          . $evalue
+		            . " -max_target_seqs " . $maxkeep;
+
+		my $finds   = qx(bash -c '$command');
+		close($fh);
+
+		# Add some text to the file when no blast hits have been found
+		if($finds eq "")
+		{
+			$finds = "EMPTY\tEMPTY\tEMPTY\t**No Hits found\n";
+		}
+
+		print $finds;
+
+		open($fh, "<", \$finds);
+		my $decoratedHits = "";
+		my $hits;
+		open($hits, ">", \$decoratedHits);
+
+		# Grab sequences from the input database. hits is temporary file containing hits that get_seqs will write to
+		get_seqs($data_file, $fh, "2", "", "", $hits, "", "", "", "");
+		close($fh);
+		# close($hits); # Already closed in sub of get_seqs.
+
+		print $decoratedHits;
+
+		my $fastaToAdd = "";
+		open($fh,   ">", \$fastaToAdd);
+		open($hits, "<", \$decoratedHits);
+		#Next add string to identify gene family to beginning of hits
+		addstring2fashead($hits, $HoH{$thisgene}{fastatag}, $fh);
+		close($hits);
+		close($fh);
+
+		# Place the reads with raxml
+
+		# Add the full path
+		my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
+		chomp($path);
+
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene);
+
+		open(my $myHandle, ">>$AllHitsFasFile");
+		$myHandle->print($fastaToAdd);
+		close($myHandle);
+	}
 }
 
 sub addstring2fashead
