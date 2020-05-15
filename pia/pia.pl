@@ -232,6 +232,10 @@ sub fullPIA
 		close($hits);
 		close($fh);
 
+		open(my $myHandle, ">>$AllHitsFasFile");
+		$myHandle->print($fastaToAdd);
+		close($myHandle);
+
 		# Place the reads with raxml
 
 		# Add the full path
@@ -239,10 +243,6 @@ sub fullPIA
 		chomp($path);
 
 		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene);
-
-		open(my $myHandle, ">>$AllHitsFasFile");
-		$myHandle->print($fastaToAdd);
-		close($myHandle);
 	}
 }
 
