@@ -228,7 +228,7 @@ sub fullPIA
 		open($fh,   ">", \$fastaToAdd);
 		open($hits, "<", \$decoratedHits);
 		#Next add string to identify gene family to beginning of hits
-		addstring2fashead($hits, $HoH{$thisgene}{fastatag}, $fh);
+		addstring2fashead($hits, $HoH{$thisgene}{fastatag}, $fh, $filename);
 		close($hits);
 		close($fh);
 
@@ -249,29 +249,26 @@ sub fullPIA
 sub addstring2fashead
 {
 	my $infileHandle  = $_[0];
-	my $addstring     = $_[1];
+	my $genehit       = $_[1];
 	my $addFileHanler = $_[2];
+	my $fileBase      = $_[3];
 	my $in_obj        = Bio::SeqIO->new(-fh => $infileHandle, '-format' => 'fasta');
-	my $currentinput  = $addstring;
 
 	# Grab sequence objects
 	my $csvFile;
 	open($csvFile, ">>$AllHitsCSVFile");
 
-	while (my $seq = $in_obj->next_seq() ) {
-		my $seq_obj = $in_obj;
-
-		my $seq_id = $currentinput.$seq->id; # Combined ID geneName_origID
+	while (my $seq = $in_obj->next_seq() )
+	{
+		my $org_id = $seq->id;
+		my $seq_id = $genehit."_".$fileBase."_".$org_id; # Combined ID geneName_origID
 		print $addFileHanler ">".$seq_id;
 		my $seq_seq = $seq->seq;
 		print $addFileHanler "\n".$seq_seq."\n";
-		# Extract just the name from the 'X_hit' string
-		$seq_id =~ s/\|ORF\d+// ;
-		my $left = index($seq_id, "_hit_")+5;
-		my $fragment = substr $seq_id, $left;
-		print $csvFile $fragment;                        # Print originqal ID
-		$fragment = substr $seq_id, 0, $left-1;
-		print $csvFile "\t".$fragment;                   # Print name of putative gene
+
+		print $csvFile $org_id;                          # Print originqal ID
+		print $csvFile "\t".$genehit;                    # Print name of putative gene
+		print $csvFile "\t".$fileBase;                   # Print base file name (without extension)
 		print $csvFile "\t".$seq_seq."\n";               # Print sequence
 	}
 

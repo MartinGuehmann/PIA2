@@ -50,7 +50,7 @@ python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py
 ### Convert back to FASTA
 
 
-awk '{print ">"$1"_"$2"\n"$3}' "${1}.${2}.allhits.pruned.csv" > "${1}.${2}.allhits.pruned.fasta"
+awk '{print ">"$2"_"$3"_"$1"\n"$4}' "${1}.${2}.allhits.pruned.csv" > "${1}.${2}.allhits.pruned.fasta"
 
 
 ### Remove duplicated sequences resulting from translation of similar isoforms.
