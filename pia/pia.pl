@@ -836,7 +836,6 @@ sub genetree_read_placement
 
 		my $ToALignFile    = $filename . "." . $gene . ".toalign.fasta";
 		my $AlignedFile    = $filename . "." . $gene . ".aligned.fasta";
-		my $AlignedPhy     = $filename . "." . $gene . ".aligned.phy";
 
 		print "Aligning Hits to known sequences using $align....\n\n";
 
@@ -847,13 +846,11 @@ sub genetree_read_placement
 			system "muscle -version";
 			system "muscle -in $ToALignFile -out $AlignedFile -quiet";
 		}
-		# MAFFT is annoying, it cuts the sequence ID to 50 characters,
-		# replaces hyphens and dots with underscores.
 		elsif($align eq "mafft") {
 			print "Using MAFFT ";
 			qx(mafft --version);
 			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
-			system "mafft --thread $numThreads --quiet --auto $ToALignFile > $AlignedFile ";
+			system "mafft --thread $numThreads --quiet --auto $ToALignFile > $AlignedFile";
 		}
 		elsif($align eq "mafftprofile") {
 			print "Using MAFFT-profile ";
@@ -867,9 +864,6 @@ sub genetree_read_placement
 			system "mv aligned.2.fas $AlignedFile";
 		}
 
-		# Convert to phylip format, uses seqConverter.pl
-		system path($0)->parent->child("seqConverterG.pl") . " -d$AlignedFile -ope -O$AlignedPhy";
-
 		if( -f "RAxML_classification."                  . $gene             and $rebuilTrees) { unlink "RAxML_classification."                  . $gene;             }
 		if( -f "RAxML_classificationLikelihoodWeights." . $gene             and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $gene;             }
 		if( -f "RAxML_entropy."                         . $gene             and $rebuilTrees) { unlink "RAxML_entropy."                         . $gene;             }
@@ -880,7 +874,7 @@ sub genetree_read_placement
 
 		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
 		system "raxmlHPC -version";
-		system "raxmlHPC -f v -s $AlignedPhy -m PROTGAMMALG -t $path.tre -n $gene -T $numThreads";
+		system "raxmlHPC -f v -s $AlignedFile -m PROTGAMMALG -t $path.tre -n $gene -T $numThreads";
 	}
 
 	my $RootedTree = $filename . "." . $gene . ".RootedTree";
@@ -909,6 +903,5 @@ sub genetree_read_placement
 	$finaltree =~ s/\[I\d+\]//g;
 	open(TAB, ">>$FinalTreeFile") or die "Can't open File!";
 	print TAB $gene."\t".$finaltree."\n";
-	#print $gene."\t".$finaltree."\n";
 	close TAB;
 }
