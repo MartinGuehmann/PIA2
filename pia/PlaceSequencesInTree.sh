@@ -83,4 +83,5 @@ perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${
 
 R --vanilla --slave < "${ORF_FILE_BASE}.$gene.tree.R" 2>R-stderr-Log.txt
 
-"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
+# *.allhits.cvs is missing, but doing this is not necessary for now
+#"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
