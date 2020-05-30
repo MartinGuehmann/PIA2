@@ -5,7 +5,7 @@
 ### This collection of scripts is written in bash, perl, and python.
 ###
 ### Make sure dependencies are installed and configured before running.
-### Dependencies include: BLAST, MAFFT, R (w/ ape and phytools packages), Perl, BioPerl, NumPy, SciPy, statsmodels (for python), Java, RAxML, USEARCH, … and any dependencies these might have.
+### Dependencies include: BLAST, MAFFT, R (w/ ape and phytools packages), Perl, BioPerl, NumPy, SciPy, statsmodels (for python), Java, EPA-ng, Gappa, USEARCH, … and any dependencies these might have.
 ### 
 ### Special thanks to Dr. Todd Oakley's lab at UCSB for the original galaxy scripts on 
 ### which we have based this pipeline. Original versions can be found at:
@@ -22,8 +22,10 @@
 	# - Clone this repository to /some/directory/
 	# - Clone https://github.com/peterjc/pico_galaxy.git to /some/directory/
 		- pico_galaxy is a dependency
+	# - Clone and build https://github.com/lczech/gappa.git, copy gappa to /usr/bin/
+	# - Clone and build https://github.com/Pbdas/epa-ng.git, copy epa-ng to /usr/bin/
 	# - You may edit numThreads in run_pia.pl if you want to use less CTP cores than you have available on your system
-	# - You may edit the -m option in the system call raxmlHPC in pia.pl if you need to customize the model of evolution for RAxML. 
+	# - You may edit the -m option in the system call raxmlHPC in pia.pl if you need to customize the model of evolution for EPA-ng. 
 
 	# Further things to install (list probably incomplete)
 	# - Install ncbi blast+ (sudo apt-get install ncbi-blast+)
@@ -42,8 +44,10 @@
 
 ------------------------------------------------------------------------------------------
 
-PIA (Phylogenetically Informed Annotation) is a set of tools for the Galaxy Bioinformatics Platform. In general, PIA uses BLAST, an alignment program, and RAxML's read placement algorithm to put unknown sequences into pre-calculated phylogenetic trees.
+The original PIA (Phylogenetically Informed Annotation) is a set of tools for the Galaxy Bioinformatics Platform. In general, PIA uses BLAST, an alignment program, and standard RAxML's read evolutionary placement algorithm (RAxML-EPA) to put unknown sequences into pre-calculated phylogenetic trees.
 We provide 102 genes called LIT (Light Interaction Toolkit) - vision genes like phototransduction genets - for use in PIA.
+
+This version of PIA is designed to run from Bash and replaces RAxML-EPA with EPA-ng to run faster.
 
 License:
 All original source code for PIA is available under the MIT license (http://opensource.org/licenses/mit-license.html). See below:

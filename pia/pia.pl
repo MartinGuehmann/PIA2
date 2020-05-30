@@ -67,7 +67,7 @@ my $evalue         = shift(@ARGV);      # 5 E-value
 my $maxkeep        = shift(@ARGV);      # 6 Maximum blast hits to retain
 my $numThreads     = shift(@ARGV);      # 7 The number of CPU cores
 my $rebuildBLASTdb = shift(@ARGV);      # 8 Whether to rebuild the BLAST database
-my $rebuilTrees    = shift(@ARGV);      # 9 Whether to rebuild the RAxML trees
+my $rebuilTrees    = shift(@ARGV);      # 9 Whether to rebuild the trees with EPA-ng
 
 my @genes2analyze;
 
@@ -824,18 +824,23 @@ sub genetree_read_placement
 	#my $path     = shift(@ARGV);       #2 path to tree and gene data
 	#my $gene     = shift(@ARGV);       #3 name of the current gene
 
-	#define outgroup using hash defined with all 
-	my $outgroup = $HoH{$gene}{outgroup};
+	# Define outgroup using hash defined with all 
+	my $outgroup       = $HoH{$gene}{outgroup};
+
+	my $ToALignFile    = $filename . "." . $gene . ".toalign.fasta";
+	my $AlignedFile    = $filename . "." . $gene . ".aligned.fasta";
+	my $RefFile        = $filename . "." . $gene . ".reference.fasta";
+	my $QueryFile      = $filename . "." . $gene . ".query.fasta";
+	my $ResultTree     = $filename . "." . $gene . ".epa_result.jplace";
+	my $ResultNexus    = $filename . "." . $gene . ".epa_result.newick";
+	my $ResultLog      = $filename . "." . $gene . ".epa_info.log";
+	my $RootedTree     = $filename . "." . $gene . ".RootedTree";
 
 	if($newgenes eq ""){
 		# If $newgenes has no hits, do not place the reads, just write a tree with no hits
 		print "No hits found. Skipping read placement\n Tree copied to output.\n";
-		system "cp $path.tre RAxML_labelledTree.".$gene;
-		system "cp $path.tre RAxML_originalLabelledTree.".$gene;
+		system "cp $path.tre $ResultNexus";
 	}else{
-
-		my $ToALignFile    = $filename . "." . $gene . ".toalign.fasta";
-		my $AlignedFile    = $filename . "." . $gene . ".aligned.fasta";
 
 		print "Aligning Hits to known sequences using $align....\n\n";
 
@@ -864,29 +869,30 @@ sub genetree_read_placement
 			system "mv aligned.2.fas $AlignedFile";
 		}
 
-		if( -f "RAxML_classification."                  . $gene             and $rebuilTrees) { unlink "RAxML_classification."                  . $gene;             }
-		if( -f "RAxML_classificationLikelihoodWeights." . $gene             and $rebuilTrees) { unlink "RAxML_classificationLikelihoodWeights." . $gene;             }
-		if( -f "RAxML_entropy."                         . $gene             and $rebuilTrees) { unlink "RAxML_entropy."                         . $gene;             }
-		if( -f "RAxML_info."                            . $gene             and $rebuilTrees) { unlink "RAxML_info."                            . $gene;             }
-		if( -f "RAxML_labelledTree."                    . $gene             and $rebuilTrees) { unlink "RAxML_labelledTree."                    . $gene;             }
-		if( -f "RAxML_originalLabelledTree."            . $gene             and $rebuilTrees) { unlink "RAxML_originalLabelledTree."            . $gene;             }
-		if( -f "RAxML_portableTree."                    . $gene . ".jplace" and $rebuilTrees) { unlink "RAxML_portableTree."                    . $gene . ".jplace"; }
+		if(! -f $ResultNexus or $rebuilTrees)
+		{
+			print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of EPA-ng...\n";
+			system "epa-ng -v";
+			system "epa-ng --split $path.fas.aligned $AlignedFile --redo";
+			system "mv reference.fasta $RefFile";
+			system "mv query.fasta $QueryFile";
+			system "sed -i \"s/ //g\" $RefFile"; # EPA-ng does not ignore trailing spaces in sequence IDs, so remove them
+			system "epa-ng -s $RefFile -q $QueryFile -m LG+G -t $path.tre --redo";
 
-		print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of RAxML...\n";
-		system "raxmlHPC -version";
-		system "raxmlHPC -f v -s $AlignedFile -m PROTGAMMALG -t $path.tre -n $gene -T $numThreads";
+			system "mv epa_result.jplace $ResultTree";
+			system "mv epa_info.log $ResultLog";
+
+			system "gappa examine graft --jplace-path $ResultTree --fully-resolve --allow-file-overwriting --name-prefix QUERY___ --threads $numThreads";
+		}
 	}
 
-	my $RootedTree = $filename . "." . $gene . ".RootedTree";
-
-	#RAxML does not use outgroup information for EPA. Use phyutility to reroot using $outgroup
+	# EPA-ng does not use outgroup information for EPA. Use phyutility with $outgroup to reroot
 	my @outgroups = split(',', $outgroup);
-	print "Using phyutility to root with OUTGROUPS determined from midpoint rooting\n: @outgroups\n";
-	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in RAxML_labelledTree.".$gene." -out $RootedTree -names @outgroups";
+	print "Using phyutility to root with OUTGROUPS determined from midpoint rooting:\n@outgroups\n";
+	system path($0)->parent->child("phyutility")->child("phyutility.sh") . " -rr -in $ResultNexus -out $RootedTree -names @outgroups";
 
-	#Now make tab delimited file to use in tab2trees
-	#open treefile to read tree line
-	#system "cat RAxML_info.$thisgene";
+	# Now make tab delimited file to use in tab2trees
+	# Open treefile to read tree line
 	open(TREE, "<",$RootedTree) or die "Can't open Rooted Tree File! Rooting requires phyutility";
 	my $finaltree;
 	while (<TREE>){
@@ -899,8 +905,6 @@ sub genetree_read_placement
 
 	$gene =~ s/ /_/g;
 	chomp($gene);
-	#remove clade labels
-	$finaltree =~ s/\[I\d+\]//g;
 	open(TAB, ">>$FinalTreeFile") or die "Can't open File!";
 	print TAB $gene."\t".$finaltree."\n";
 	close TAB;
