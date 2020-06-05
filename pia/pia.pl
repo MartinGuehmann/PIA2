@@ -845,26 +845,45 @@ sub genetree_read_placement
 		print "Aligning Hits to known sequences using $align....\n\n";
 
 		#First concatenate fasta files and align
-		if($align eq "muscle"){
+		if($align eq "muscle")
+		{
+			system "cp $path.fas $ToALignFile";
+			open(my $allign, ">>$ToALignFile") or die "Can't open File!";
+			$allign->print("\n");
+			$allign->print($newgenes);
+			close($allign);
+
 			print "Align with MUSCLE\n";
-			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
 			system "muscle -version";
 			system "muscle -in $ToALignFile -out $AlignedFile -quiet";
 		}
-		elsif($align eq "mafft") {
-			print "Using MAFFT ";
+		elsif($align eq "mafft")
+		{
+			system "cp $path.fas $ToALignFile";
+			open(my $allign, ">>$ToALignFile") or die "Can't open File!";
+			$allign->print("\n");
+			$allign->print($newgenes);
+			close($allign);
+
+			print "Allign with MAFFT ";
 			qx(mafft --version);
-			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
 			system "mafft --thread $numThreads --quiet --auto $ToALignFile > $AlignedFile";
 		}
-		elsif($align eq "mafftprofile") {
-			print "Using MAFFT-profile ";
+		elsif($align eq "mafftprofile")
+		{
+			print "Allign with MAFFT-profile ";
 			qx(mafft --version);
-#			system "echo \"$newgenes\" | cat - $path.fas.aligned > $ToALignFile";
 			system "mafft --thread $numThreads --add $newgenes --reorder $path.fas.aligned > $AlignedFile";
 		}
-		elsif($align eq "prank") {
-			system "echo \"$newgenes\" | cat - $path.fas > $ToALignFile";
+		elsif($align eq "prank")
+		{
+			system "cp $path.fas $ToALignFile";
+			open(my $allign, ">>$ToALignFile") or die "Can't open File!";
+			$allign->print("\n");
+			$allign->print($newgenes);
+			close($allign);
+
+			print "Allign with PRANK ";
 			system "prank -d=$ToALignFile -o=aligned -f=fasta -F";
 			system "mv aligned.2.fas $AlignedFile";
 		}
