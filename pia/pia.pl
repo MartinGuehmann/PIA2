@@ -88,9 +88,10 @@ if($scope eq "single"){
 my($filename, $dirs, $suffix) = File::Basename::fileparse($data_file, qr/\.[^.]*/);
 
 # Files to retain all hits found from all gene families in the run
-my $FinalTreeFile  = $filename . "." . $genefamily . ".treeout.csv";
-my $AllHitsCSVFile = $filename . "." . $genefamily . ".allhits.csv";
-my $AllHitsFasFile = $filename . "." . $genefamily . ".allhits.fasta";
+my $finalBaseFile  = "$filename.eValue=$evalue.$genefamily";
+my $FinalTreeFile  = "$finalBaseFile.treeout.csv";
+my $AllHitsCSVFile = "$finalBaseFile.allhits.csv";
+my $AllHitsFasFile = "$finalBaseFile.allhits.fasta";
 
 if(-f $FinalTreeFile)
 {
@@ -142,7 +143,7 @@ sub placeOnlyInTree
 			}
 		}
 
-		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene);
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue);
 	}
 }
 
@@ -242,7 +243,7 @@ sub fullPIA
 		my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
 		chomp($path);
 
-		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene);
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue);
 	}
 }
 
@@ -818,6 +819,7 @@ sub genetree_read_placement
 	my $align    = $_[1];
 	my $path     = $_[2];
 	my $gene     = $_[3];
+	my $evalue   = $_[4];
 
 	#my $newgenes = shift(@ARGV);       #0 new genes to align
 	#my $align    = shift(@ARGV);       #1 alignment program to use
@@ -827,14 +829,16 @@ sub genetree_read_placement
 	# Define outgroup using hash defined with all 
 	my $outgroup       = $HoH{$gene}{outgroup};
 
-	my $ToALignFile    = $filename . "." . $gene . ".toalign.fasta";
-	my $AlignedFile    = $filename . "." . $gene . ".aligned.fasta";
-	my $RefFile        = $filename . "." . $gene . ".reference.fasta";
-	my $QueryFile      = $filename . "." . $gene . ".query.fasta";
-	my $ResultTree     = $filename . "." . $gene . ".epa_result.jplace";
-	my $ResultNexus    = $filename . "." . $gene . ".epa_result.newick";
-	my $ResultLog      = $filename . "." . $gene . ".epa_info.log";
-	my $RootedTree     = $filename . "." . $gene . ".RootedTree";
+	my $baseFile       = "$filename.eValue=$evalue.$gene";
+
+	my $ToALignFile    = "$baseFile.toalign.fasta";
+	my $AlignedFile    = "$baseFile.aligned.fasta";
+	my $RefFile        = "$baseFile.reference.fasta";
+	my $QueryFile      = "$baseFile.query.fasta";
+	my $ResultTree     = "$baseFile.epa_result.jplace";
+	my $ResultNexus    = "$baseFile.epa_result.newick";
+	my $ResultLog      = "$baseFile.epa_info.log";
+	my $RootedTree     = "$baseFile.RootedTree";
 
 	if($newgenes eq ""){
 		# If $newgenes has no hits, do not place the reads, just write a tree with no hits

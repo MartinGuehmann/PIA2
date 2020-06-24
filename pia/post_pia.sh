@@ -29,34 +29,34 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 ###  Identify tips longer than ___ median absolute deviations of the tree's branch lengths. Modify number to change MAD multiplier.
 ###  long_branch_finder2.py can be reverted to calculate standard deviations instead of MADs. More info as comments in the script.
 
-python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py "${1}.${2}.treeout.csv" 4 > "${1}.${2}.hits_to_prune.list"
+python "$DIR"/../osiris_phylogenetics/phylogenies/long_branch_finder.py "${1}.treeout.csv" 4 > "${1}.hits_to_prune.list"
 
 
 ### Clean the output of the long branch finder to avoid conflicts downstream.
 
-python "$DIR"/cleanhits.py "${1}.${2}.hits_to_prune.list" > "${1}.${2}.hits_to_prune.clean.list"
+python "$DIR"/cleanhits.py "${1}.hits_to_prune.list" > "${1}.hits_to_prune.clean.list"
 
 
 ### Then Remove the | from old assemblies.
 
-sed -ie "s/|/_/g" "${1}.${2}.allhits.csv"
+sed -ie "s/|/_/g" "${1}.allhits.csv"
 
 
 ### Remove entries from PIA results phytab file that match to a list.
 
-python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py "${1}.${2}.allhits.csv" "${1}.${2}.hits_to_prune.clean.list" discard > "${1}.${2}.allhits.pruned.csv"
+python "$DIR"/../osiris_phylogenetics/phyloconversion/prune_phytab_using_list.py "${1}.allhits.csv" "${1}.hits_to_prune.clean.list" discard > "${1}.allhits.pruned.csv"
 
 
 ### Convert back to FASTA
 
 
-awk '{print ">"$2"_"$3"_"$1"\n"$4}' "${1}.${2}.allhits.pruned.csv" > "${1}.${2}.allhits.pruned.fasta"
+awk '{print ">"$2"_"$3"_"$1"\n"$4}' "${1}.allhits.pruned.csv" > "${1}.allhits.pruned.fasta"
 
 
 ### Remove duplicated sequences resulting from translation of similar isoforms.
-if [ -s "${1}.${2}.allhits.pruned.fasta" ]
+if [ -s "${1}.allhits.pruned.fasta" ]
 then
-	usearch -cluster_fast "${1}.${2}.allhits.pruned.fasta" -sort length -id 1.00 -threads ${3} -centroids "${1}.${2}.PIA.results.fasta"
+	usearch -cluster_fast "${1}.allhits.pruned.fasta" -sort length -id 1.00 -threads ${2} -centroids "${1}.PIA.results.fasta"
 else
-	cp "${1}.${2}.allhits.fasta" "${1}.${2}.PIA.results.fasta"
+	cp "${1}.allhits.fasta" "${1}.PIA.results.fasta"
 fi

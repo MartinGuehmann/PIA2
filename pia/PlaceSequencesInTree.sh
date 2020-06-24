@@ -76,12 +76,14 @@ file="All.fasta"
 filebase=$(basename ${file} ".fasta")
 ORF_FILE_BASE="${filebase}_ORF_${aalength}aa"
 ORF_FILE="${ORF_FILE_BASE}.fasta"
+FINAL_FILE_BASE="${ORF_FILE_BASE}.eValue=$evalue.$gene"
+
 
 perl "$DIR"/pia.pl "$ORF_FILE" $search_type $gene mafft $evalue $blasthits $numThreads $rebuildDatabases $rebuildTrees
 
-perl "$DIR"/phylographics/makeRtrees.pl "${ORF_FILE_BASE}.$gene.treeout.csv" "${ORF_FILE_BASE}.$gene.trees.pdf" phylogram no None Rfile yes no >"${ORF_FILE_BASE}.$gene.tree.R"
+perl "$DIR"/phylographics/makeRtrees.pl "${FINAL_FILE_BASE}.treeout.csv" "${FINAL_FILE_BASE}.trees.pdf" phylogram no None Rfile yes no >"${FINAL_FILE_BASE}.tree.R"
 
-R --vanilla --slave < "${ORF_FILE_BASE}.$gene.tree.R" 2>R-stderr-Log.txt
+R --vanilla --slave < "${FINAL_FILE_BASE}.tree.R" 2>R-stderr-Log.txt
 
 # *.allhits.cvs is missing, but doing this is not necessary for now
-#"$DIR"/post_pia.sh ${ORF_FILE_BASE} ${gene} ${numThreads}
+#"$DIR"/post_pia.sh ${FINAL_FILE_BASE} ${numThreads}
