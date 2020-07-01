@@ -84,7 +84,7 @@ then
 	mkdir "$SUBDIR/$RESULTS_FILE_ALL"
 fi
 
-rm -f "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue.$evalue.$gene.allhits.fasta"
+rm -f "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
 
 for file in *.fasta ; do
 
