@@ -58,7 +58,7 @@ if($extiplabels eq 'yes'){
 print "require(ape);\n";
 print "require(phytools);\n";
 #print "require(phangorn);\n";
-print "pdf(file='$outfile');\n";
+print "pdf(file='$outfile', paper = 'a4', width = 0, height = 0);\n";
 
 
 
