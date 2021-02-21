@@ -122,7 +122,10 @@ for file in *.fasta ; do
 
 	cat "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
 
+	"$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta"
 done
+
+"$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
 
 cd "$SUBDIR/$RESULTS_FILE_ALL"
 

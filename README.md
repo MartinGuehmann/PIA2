@@ -36,6 +36,7 @@
 			- sudo apt install libmagick++-dev
 			- sudo apt install libcurl4-openssl-dev
 	# - Install usearch (https://www.drive5.com/usearch/download.html)
+	# - Install CD-Hit (https://github.com/weizhongli/cdhit)
 
 ## The script run_pia.sh will run PIA and post-PIA on all fasta files in the working directory. 
 ## Both run_pia.sh and post_pia.sh should be edited before running to adjust parameters.
