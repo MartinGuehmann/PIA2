@@ -39,7 +39,8 @@ while(<BLASTFILE>) {
 		$HoH{$genename}{bait}        = $genedata[2];
 		$HoH{$genename}{fastatag}    = $genedata[3];
 		$HoH{$genename}{reftreename} = $genedata[4];
-		$HoH{$genename}{outgroup}    = $genedata[5];
+		$HoH{$genename}{outgroupTag} = $genedata[5];
+		$HoH{$genename}{outgroup}    = $genedata[6];
 	}else{
 		die "File named genelist.txt must be availalbe in tab delimited format with gene data\n";
 	}
@@ -143,7 +144,7 @@ sub placeOnlyInTree
 			}
 		}
 
-		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue);
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue, 0);
 	}
 }
 
@@ -243,7 +244,7 @@ sub fullPIA
 		my $path = path("$DATADIR")->child($HoH{$thisgene}{set})->child($HoH{$thisgene}{reftreename});
 		chomp($path);
 
-		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue);
+		genetree_read_placement($fastaToAdd, $alignmentProg, $path, $thisgene, $evalue, 1);
 	}
 }
 
@@ -815,11 +816,12 @@ sub search
 
 sub genetree_read_placement
 {
-	my $newgenes = $_[0];
-	my $align    = $_[1];
-	my $path     = $_[2];
-	my $gene     = $_[3];
-	my $evalue   = $_[4];
+	my $newgenes    = $_[0];
+	my $align       = $_[1];
+	my $path        = $_[2];
+	my $gene        = $_[3];
+	my $evalue      = $_[4];
+	my $relabelTree = $_[5];
 
 	#my $newgenes = shift(@ARGV);       #0 new genes to align
 	#my $align    = shift(@ARGV);       #1 alignment program to use
@@ -894,7 +896,7 @@ sub genetree_read_placement
 
 		if(! -f $ResultNexus or $rebuilTrees)
 		{
-			print "Placing Hits on gene tree with Maximum Likelihood using Evolutionary Placement Algorithm (EPA) of EPA-ng...\n";
+			print "Placing the Hits on the gene tree with Maximum Likelihood with the Evolutionary Placement Algorithm (EPA) of EPA-ng...\n";
 			system "epa-ng -v";
 			system "epa-ng --split $path.fas.aligned $AlignedFile --redo";
 			system "mv reference.fasta $RefFile";
@@ -906,6 +908,37 @@ sub genetree_read_placement
 			system "mv epa_info.log $ResultLog";
 
 			system "gappa examine graft --jplace-path $ResultTree --fully-resolve --allow-file-overwriting --name-prefix QUERY___ --threads $numThreads";
+
+			if($relabelTree)
+			{
+				my $newOutgroup = $outgroup;
+				$newOutgroup =~ s/,/ /g;
+				$newOutgroup =~ s/\n//g;
+				my $cmd="nw_clade $ResultNexus $newOutgroup | nw_labels - ";
+				my @outgroupSeqs=qx($cmd);
+
+				my $fastaTag    = $HoH{$gene}{fastatag};
+				my $outgroupTag = $HoH{$gene}{outgroupTag};
+
+				foreach my $outSeq (@outgroupSeqs)
+				{
+					if($outSeq =~ m/^QUERY___/)
+					{
+						$outSeq =~ s/\n//g;
+						$outSeq =~ s/^QUERY___//g;
+						my $newOutSeq = $outSeq;
+						$newOutSeq =~ s/$fastaTag/$outgroupTag/;
+						print "system sed -i 's/$outSeq/$newOutSeq/g' $ToALignFile\n";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $ToALignFile";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $AlignedFile";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $QueryFile";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $ResultTree";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $ResultNexus";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $AllHitsCSVFile";
+						system "sed -i 's/$outSeq/$newOutSeq/g' $AllHitsFasFile";
+					}
+				}
+			}
 		}
 	}
 

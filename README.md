@@ -24,6 +24,10 @@
 		- pico_galaxy is a dependency
 	# - Clone and build https://github.com/lczech/gappa.git, copy gappa to /usr/bin/
 	# - Clone and build https://github.com/Pbdas/epa-ng.git, copy epa-ng to /usr/bin/
+	# - Clone, build, and install https://github.com/tjunier/newick_utils.git
+	#	./configure --disable-shared (add --prefix=/home/user for an installation in /home/user/bin/ and /home/user/lib/ in your home directory)
+	#	make
+	#	sudo make install (drop sudo if you install it locally, e.g. your home directory)
 	# - You may edit numThreads in run_pia.pl if you want to use less CTP cores than you have available on your system
 	# - You may edit the -m option in the system call raxmlHPC in pia.pl if you need to customize the model of evolution for EPA-ng. 
 
