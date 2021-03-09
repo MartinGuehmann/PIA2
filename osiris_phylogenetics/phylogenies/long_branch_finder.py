@@ -25,8 +25,8 @@ def read(filename):
     numstd = int(sys.argv[2])*std
     for i in tipbl:
       if float(i) > float(numstd):
-#        print d2[str(i)] + '\t' + gene  + '\t' + i  
-        print d2[str(i)] + '\t' + gene
+#        print(d2[str(i)] + '\t' + gene  + '\t' + i)
+        print(d2[str(i)] + '\t' + gene)
   f.close()
 
 def main():

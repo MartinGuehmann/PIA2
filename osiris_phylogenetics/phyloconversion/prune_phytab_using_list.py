@@ -18,9 +18,9 @@ def read(filename):
 #    line.strip()
      match = pattern.findall(line)
      if match and sys.argv[3] == 'keep':
-      print line,
+      print(line)
      if not match and sys.argv[3] == 'discard':
-      print line,
+      print(line)
   bad.close()
   f.close()
 
