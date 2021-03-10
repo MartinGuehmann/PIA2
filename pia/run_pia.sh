@@ -117,7 +117,8 @@ for file in *.fasta ; do
 
 	R --vanilla --slave < "${FINAL_FILE_BASE}.tree.R" 2>R-stderr-Log.txt
 
-	"$DIR"/post_pia.sh ${FINAL_FILE_BASE} ${numThreads}
+	# There is some problem with this, but actually we do not need this.
+#	"$DIR"/post_pia.sh ${FINAL_FILE_BASE} ${numThreads}
 	cd ../../
 
 	cat "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
