@@ -13,3 +13,5 @@ numTreads=$(nproc)
 
 cd-hit -i $inputFile -o $outputFile -c 0.9 -M 0 -d 0 -T $numTreads
 
+# Return the outfile
+echo $outputFile
