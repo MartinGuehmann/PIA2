@@ -30,10 +30,13 @@ open(BLASTFILE, "<$dataFile") or die "File $dataFileName file must be available 
 my @genedata;
 my %HoH;
 
-while(<BLASTFILE>) {
+while(<BLASTFILE>)
+{
 	my $currentinput = "$_";
-	if($currentinput =~ /\t/){
-		my @genedata = split(/\t/);
+	if($currentinput =~ /\t/)
+	{
+		$currentinput =~ s/\s+$//;
+		my @genedata = split(/\t/, $currentinput);
 		my $genename = $genedata[0];
 		$HoH{$genename}{set}         = $genedata[1];
 		$HoH{$genename}{bait}        = $genedata[2];
@@ -41,7 +44,18 @@ while(<BLASTFILE>) {
 		$HoH{$genename}{reftreename} = $genedata[4];
 		$HoH{$genename}{outgroupTag} = $genedata[5];
 		$HoH{$genename}{outgroup}    = $genedata[6];
-	}else{
+		my $group = 0;
+		for(my $i = 7; $i <= $#genedata; $i += 2)
+		{
+			$HoH{$genename}{"ingroupTag$group"} = $genedata[$i];
+			$HoH{$genename}{"ingroup$group"}    = $genedata[$i+1];
+
+			$group++;
+		}
+		$HoH{$genename}{ingroupNum}  = $group;
+	}
+	else
+	{
 		die "File named genelist.txt must be availalbe in tab delimited format with gene data\n";
 	}
 }
@@ -73,13 +87,18 @@ my $rebuilTrees    = shift(@ARGV);      # 9 Whether to rebuild the trees with EP
 my @genes2analyze;
 
 #if $scope = functional then loop through all genes and analyze those that match to the set
-if($scope eq "single"){
+if($scope eq "single")
+{
 	push(@genes2analyze, $genefamily);
-}else{ #scope = functional
+}
+else
+{ #scope = functional
 	# Add all genes from set into an array
 	print "Analyzing functional gene class\n";
-	for my $hashgene (keys %HoH) {
-		if($HoH{$hashgene}{set} eq $genefamily) {
+	for my $hashgene (keys %HoH)
+	{
+		if($HoH{$hashgene}{set} eq $genefamily)
+		{
 			push(@genes2analyze, $hashgene);
 			print "\t".$hashgene."\n";
 		}
@@ -911,32 +930,12 @@ sub genetree_read_placement
 
 			if($relabelTree)
 			{
-				my $newOutgroup = $outgroup;
-				$newOutgroup =~ s/,/ /g;
-				$newOutgroup =~ s/\n//g;
-				my $cmd="nw_clade $ResultNexus $newOutgroup | nw_labels - ";
-				my @outgroupSeqs=qx($cmd);
-
-				my $fastaTag    = $HoH{$gene}{fastatag};
-				my $outgroupTag = $HoH{$gene}{outgroupTag};
-
-				foreach my $outSeq (@outgroupSeqs)
+				RelabelTree($baseFile, $HoH{$gene}{fastatag}, $HoH{$gene}{outgroup}, $HoH{$gene}{outgroupTag});
+				
+				my $num = $HoH{$gene}{ingroupNum};
+				for(my $i = 0; $i < $num; $i++)
 				{
-					if($outSeq =~ m/^QUERY___/)
-					{
-						$outSeq =~ s/\n//g;
-						$outSeq =~ s/^QUERY___//g;
-						my $newOutSeq = $outSeq;
-						$newOutSeq =~ s/$fastaTag/$outgroupTag/;
-						print "system sed -i 's/$outSeq/$newOutSeq/g' $ToALignFile\n";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $ToALignFile";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $AlignedFile";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $QueryFile";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $ResultTree";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $ResultNexus";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $AllHitsCSVFile";
-						system "sed -i 's/$outSeq/$newOutSeq/g' $AllHitsFasFile";
-					}
+					RelabelTree($baseFile, $HoH{$gene}{fastatag}, $HoH{$gene}{"ingroup$i"}, $HoH{$gene}{"ingroupTag$i"});
 				}
 			}
 		}
@@ -964,4 +963,42 @@ sub genetree_read_placement
 	open(TAB, ">>$FinalTreeFile") or die "Can't open File!";
 	print TAB $gene."\t".$finaltree."\n";
 	close TAB;
+}
+
+sub RelabelTree
+{
+	my $baseFile    = $_[0];
+	my $fastaTag    = $_[1];
+	my $group       = $_[2];
+	my $groupTag    = $_[3];
+
+	my $ToALignFile = "$baseFile.toalign.fasta";
+	my $AlignedFile = "$baseFile.aligned.fasta";
+	my $QueryFile   = "$baseFile.query.fasta";
+	my $ResultTree  = "$baseFile.epa_result.jplace";
+	my $ResultNexus = "$baseFile.epa_result.newick";
+
+	$group =~ s/,/ /g;
+	$group =~ s/\n//g;
+	my $cmd="nw_clade $ResultNexus $group | nw_labels - ";
+	my @groupSeqs=qx($cmd);
+
+
+	foreach my $seq (@groupSeqs)
+	{
+		if($seq =~ m/^QUERY___/)
+		{
+			$seq =~ s/\n//g;
+			$seq =~ s/^QUERY___//g;
+			my $newSeq = $seq;
+			$newSeq =~ s/$fastaTag/$groupTag/;
+			system "sed -i 's/$seq/$newSeq/g' $ToALignFile";
+			system "sed -i 's/$seq/$newSeq/g' $AlignedFile";
+			system "sed -i 's/$seq/$newSeq/g' $QueryFile";
+			system "sed -i 's/$seq/$newSeq/g' $ResultTree";
+			system "sed -i 's/$seq/$newSeq/g' $ResultNexus";
+			system "sed -i 's/$seq/$newSeq/g' $AllHitsCSVFile";
+			system "sed -i 's/$seq/$newSeq/g' $AllHitsFasFile";
+		}
+	}
 }
