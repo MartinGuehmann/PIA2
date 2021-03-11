@@ -11,7 +11,7 @@ fileBase="${fileBase%.*}"
 outputFile="$filePath/$fileBase.nr90.$extension"
 numTreads=$(nproc)
 
-cd-hit -i $inputFile -o $outputFile -c 0.9 -M 0 -d 0 -T $numTreads
+cd-hit -i $inputFile -o $outputFile -c 0.9 -M 0 -d 0 -T $numTreads >&2
 
 # Return the outfile
 echo $outputFile
