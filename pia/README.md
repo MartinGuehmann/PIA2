@@ -19,6 +19,7 @@
 
 ## Setting PIA up is pretty simple:
 
+	# - Install SeqKit (https://bioinf.shenwei.me/seqkit/)
 	# - Clone this repository to /some/directory/
 	# - Clone https://github.com/peterjc/pico_galaxy.git to /some/directory/
 		- pico_galaxy is a dependency

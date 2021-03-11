@@ -24,3 +24,6 @@ do
 	pattern=$(echo $id | sed "s/^.*${genePrefix}_//")
 	seqkit grep -j $numTreads -p $pattern $dataBaseFile | sed "s/>/>$completePrefix/" >> $outputFile
 done
+
+# Return the outfile
+echo $outputFile

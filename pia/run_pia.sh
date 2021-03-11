@@ -124,7 +124,9 @@ for file in *.fasta ; do
 	cat "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
 
 	nonRedundantFile=$("$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta")
-	"$DIR/MakeDNAOutputFile.sh" "$nonRedundantFile" "$CURDIR/$file"
+	nonRedundantDNAFile=$("$DIR/MakeDNAOutputFile.sh" "$nonRedundantFile" "$CURDIR/$file")
+	nonRedundantFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" $nonRedundantFile)
+	nonRedundantDNAFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" $nonRedundantDNAFile)
 done
 
 "$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
