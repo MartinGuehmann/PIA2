@@ -121,12 +121,15 @@ for file in *.fasta ; do
 #	"$DIR"/post_pia.sh ${FINAL_FILE_BASE} ${numThreads}
 	cd ../../
 
-	cat "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
+	proteinOutputFile="$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta"
+	cat "$proteinOutputFile" >> "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
 
-	nonRedundantFile=$("$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE/${FINAL_FILE_BASE}.allhits.fasta")
-	nonRedundantDNAFile=$("$DIR/MakeDNAOutputFile.sh" "$nonRedundantFile" "$CURDIR/$file")
-	nonRedundantFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" $nonRedundantFile)
-	nonRedundantDNAFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" $nonRedundantDNAFile)
+	nonRedundantProteinFile=$("$DIR/MakeNonRedundant.sh" "$proteinOutputFile")
+	nonRedundantProteinFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" "$nonRedundantProteinFile")
+
+	dnaOutputFile=$("$DIR/MakeDNAOutputFile.sh" "$proteinOutputFile" "$CURDIR/$file")
+	nonRedundantDNAFile=$("$DIR/MakeNonRedundant.sh" "$dnaOutputFile")
+	nonRedundantDNAFileNoOutgroup=$("$DIR/MakeOutgroupFree.sh" "$nonRedundantDNAFile")
 done
 
 "$DIR/MakeNonRedundant.sh" "$CURDIR/$SUBDIR/$RESULTS_FILE_ALL/${ALL_DEST}_ORF_${aalength}aa.eValue=$evalue.$gene.allhits.fasta"
